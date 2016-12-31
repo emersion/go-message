@@ -1,8 +1,8 @@
 package messages
 
 import (
-	"io"
 	"fmt"
+	"io"
 	"strings"
 
 	"golang.org/x/text/encoding"
@@ -10,7 +10,7 @@ import (
 )
 
 var charsets = map[string]encoding.Encoding{
-	"iso-8859-1": charmap.ISO8859_1,
+	"iso-8859-1":   charmap.ISO8859_1,
 	"windows-1252": charmap.Windows1252,
 }
 

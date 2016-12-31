@@ -30,8 +30,8 @@ func writeHeader(w io.Writer, header textproto.MIMEHeader) error {
 }
 
 type Writer struct {
-	w io.Writer
-	c io.Closer
+	w  io.Writer
+	c  io.Closer
 	mw *multipart.Writer
 }
 
@@ -85,7 +85,7 @@ func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 
 	// cw -> ww -> pw -> w.mw -> w.w
 
-	ww := &struct{io.Writer}{nil}
+	ww := &struct{ io.Writer }{nil}
 	header, cw := NewWriter(ww, header)
 
 	pw, err := w.mw.CreatePart(header)

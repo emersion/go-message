@@ -16,7 +16,7 @@ type Entity struct {
 
 	Header textproto.MIMEHeader // The entity's header.
 
-	mediaType string
+	mediaType   string
 	mediaParams map[string]string
 }
 
@@ -36,9 +36,9 @@ func NewEntity(header textproto.MIMEHeader, r io.Reader) *Entity {
 	}
 
 	return &Entity{
-		Reader: r,
-		Header: header,
-		mediaType: mediaType,
+		Reader:      r,
+		Header:      header,
+		mediaType:   mediaType,
 		mediaParams: mediaParams,
 	}
 }
