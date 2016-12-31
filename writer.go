@@ -29,7 +29,7 @@ func writeHeader(w io.Writer, header textproto.MIMEHeader) error {
 	return err
 }
 
-// A writer formats entities.
+// A Writer formats entities.
 type Writer struct {
 	w  io.Writer
 	c  io.Closer
