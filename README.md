@@ -1,2 +1,7 @@
 # go-messages
-A Go library for the Internet Message Format
+
+A Go library for the Internet Message Format.
+
+## License
+
+MIT
