@@ -86,7 +86,7 @@ func (w *Writer) Close() error {
 // entity is not multipart, it fails.
 func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 	if w.mw == nil {
-		return nil, errors.New("cannot create a part in a non-multipart message")
+		return nil, errors.New("messages: cannot create a part in a non-multipart message")
 	}
 
 	// cw -> ww -> pw -> w.mw -> w.w

@@ -23,5 +23,5 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	if enc, ok := charsets[strings.ToLower(charset)]; ok {
 		return enc.NewDecoder().Reader(input), nil
 	}
-	return nil, fmt.Errorf("message: unhandled charset %q", charset)
+	return nil, fmt.Errorf("messages: unhandled charset %q", charset)
 }
