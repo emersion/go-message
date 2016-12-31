@@ -6,6 +6,7 @@ import (
 	"net/textproto"
 )
 
+// MultipartReader is an iterator over parts in a MIME multipart body.
 type MultipartReader interface {
 	// NextPart returns the next part in the multipart or an error. When there are
 	// no more parts, the error io.EOF is returned.
@@ -16,6 +17,7 @@ type multipartReader struct {
 	r *multipart.Reader
 }
 
+// NextPart implements MultipartReader.
 func (r *multipartReader) NextPart() (*Entity, error) {
 	p, err := r.r.NextPart()
 	if err != nil {
