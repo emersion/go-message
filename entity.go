@@ -12,9 +12,8 @@ import (
 // An Entity is either a message or a one of the parts in the body of a
 // multipart entity.
 type Entity struct {
-	io.Reader // The entity's body.
-
-	Header textproto.MIMEHeader // The entity's header.
+	io.Reader                      // The entity's body.
+	Header    textproto.MIMEHeader // The entity's header.
 
 	mediaType   string
 	mediaParams map[string]string
@@ -43,6 +42,17 @@ func NewEntity(header textproto.MIMEHeader, r io.Reader) *Entity {
 	}
 }
 
+// NewMultipart makes a new multipart Entity with the provided header and parts.
+// The Content-Type header must begin with "multipart/".
+func NewMultipart(header textproto.MIMEHeader, parts []*Entity) *Entity {
+	r := &multipartBody{
+		header: header,
+		parts:  parts,
+	}
+
+	return NewEntity(header, r)
+}
+
 // Read reads a message from r.
 func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
@@ -56,11 +66,14 @@ func Read(r io.Reader) (*Entity, error) {
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's
 // body. If this entity is not multipart, it returns nil.
-func (e *Entity) MultipartReader() *MultipartReader {
+func (e *Entity) MultipartReader() MultipartReader {
 	if !strings.HasPrefix(e.mediaType, "multipart/") {
 		return nil
 	}
-	return &MultipartReader{multipart.NewReader(e, e.mediaParams["boundary"])}
+	if mb, ok := e.Reader.(*multipartBody); ok {
+		return mb
+	}
+	return &multipartReader{multipart.NewReader(e, e.mediaParams["boundary"])}
 }
 
 // WriteTo writes this entity to w.
@@ -69,6 +82,12 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(ew, e.Reader)
+	defer ew.Close()
+
+	if mb, ok := e.Reader.(*multipartBody); ok {
+		err = mb.writeTo(ew)
+	} else {
+		_, err = io.Copy(ew, e.Reader)
+	}
 	return err
 }
