@@ -78,7 +78,7 @@ func (w *Writer) Close() error {
 	return w.c.Close()
 }
 
-func (w *Writer) CreateChild(header textproto.MIMEHeader) (*Writer, error) {
+func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 	if w.mw == nil {
 		return nil, errors.New("cannot create a part in a non-multipart message")
 	}

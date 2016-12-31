@@ -9,16 +9,19 @@ import (
 	"strings"
 )
 
-type Part struct {
-	io.Reader
+// Entity is either a message or a one of the parts in the body of a multipart
+// entity.
+type Entity struct {
+	io.Reader // The entity's body.
 
-	Header textproto.MIMEHeader
+	Header textproto.MIMEHeader // The entity's header.
 
 	mediaType string
 	mediaParams map[string]string
 }
 
-func NewPart(header textproto.MIMEHeader, r io.Reader) *Part {
+// NewEntity makes a new Entity with the provided header and body.
+func NewEntity(header textproto.MIMEHeader, r io.Reader) *Entity {
 	r = decode(header.Get("Content-Transfer-Encoding"), r)
 	header.Del("Content-Transfer-Encoding")
 
@@ -32,7 +35,7 @@ func NewPart(header textproto.MIMEHeader, r io.Reader) *Part {
 		header.Set("Content-Type", mime.FormatMediaType(mediaType, mediaParams))
 	}
 
-	return &Part{
+	return &Entity{
 		Reader: r,
 		Header: header,
 		mediaType: mediaType,
@@ -40,20 +43,23 @@ func NewPart(header textproto.MIMEHeader, r io.Reader) *Part {
 	}
 }
 
-func ReadPart(r io.Reader) (*Part, error) {
+// Read reads a message from r.
+func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
 	h, err := textproto.NewReader(br).ReadMIMEHeader()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewPart(h, br), nil
+	return NewEntity(h, br), nil
 }
 
-func (p *Part) ChildrenReader() *Reader {
-	if !strings.HasPrefix(p.mediaType, "multipart/") {
+// PartsReader returns a Reader that reads parts from this entity's body. If
+// this entity is not multipart, it returns nil.
+func (e *Entity) PartsReader() *Reader {
+	if !strings.HasPrefix(e.mediaType, "multipart/") {
 		return nil
 	}
 
-	return &Reader{multipart.NewReader(p, p.mediaParams["boundary"])}
+	return &Reader{multipart.NewReader(e, e.mediaParams["boundary"])}
 }
