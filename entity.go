@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// Entity is either a message or a one of the parts in the body of a multipart
-// entity.
+// An Entity is either a message or a one of the parts in the body of a
+// multipart entity.
 type Entity struct {
 	io.Reader // The entity's body.
 

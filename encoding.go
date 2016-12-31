@@ -19,13 +19,11 @@ func decode(enc string, r io.Reader) io.Reader {
 	return r
 }
 
-type nopWriteCloser struct {
+type nopCloser struct {
 	io.Writer
 }
 
-func (*nopWriteCloser) Close() error {
-	return nil
-}
+func (nopCloser) Close() error { return nil }
 
 func encode(enc string, w io.Writer) io.WriteCloser {
 	var wc io.WriteCloser
@@ -35,9 +33,9 @@ func encode(enc string, w io.Writer) io.WriteCloser {
 	case "base64":
 		wc = base64.NewEncoder(base64.StdEncoding, textwrapper.NewRFC822(w))
 	case "7bit", "8bit":
-		wc = &nopWriteCloser{textwrapper.New(w, "\r\n", 1000)}
+		wc = nopCloser{textwrapper.New(w, "\r\n", 1000)}
 	default: // "binary"
-		wc = &nopWriteCloser{w}
+		wc = nopCloser{w}
 	}
 	return wc
 }

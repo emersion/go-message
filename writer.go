@@ -29,13 +29,14 @@ func writeHeader(w io.Writer, header textproto.MIMEHeader) error {
 	return err
 }
 
+// A writer formats entities.
 type Writer struct {
 	w  io.Writer
 	c  io.Closer
 	mw *multipart.Writer
 }
 
-func NewWriter(w io.Writer, header textproto.MIMEHeader) (textproto.MIMEHeader, *Writer) {
+func newWriter(w io.Writer, header textproto.MIMEHeader) (textproto.MIMEHeader, *Writer) {
 	ww := &Writer{w: w}
 
 	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
@@ -60,8 +61,9 @@ func NewWriter(w io.Writer, header textproto.MIMEHeader) (textproto.MIMEHeader, 
 	return header, ww
 }
 
+// CreateWriter creates a new Writer writing to w.
 func CreateWriter(w io.Writer, header textproto.MIMEHeader) (*Writer, error) {
-	header, ww := NewWriter(w, header)
+	header, ww := newWriter(w, header)
 
 	if err := writeHeader(w, header); err != nil {
 		return nil, err
@@ -70,14 +72,18 @@ func CreateWriter(w io.Writer, header textproto.MIMEHeader) (*Writer, error) {
 	return ww, nil
 }
 
+// Write implements io.Writer.
 func (w *Writer) Write(b []byte) (int, error) {
 	return w.w.Write(b)
 }
 
+// Close implements io.Closer.
 func (w *Writer) Close() error {
 	return w.c.Close()
 }
 
+// CreatePart returns a Writer to a new part in this multipart entity. If this
+// entity is not multipart, it fails.
 func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 	if w.mw == nil {
 		return nil, errors.New("cannot create a part in a non-multipart message")
@@ -86,7 +92,7 @@ func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 	// cw -> ww -> pw -> w.mw -> w.w
 
 	ww := &struct{ io.Writer }{nil}
-	header, cw := NewWriter(ww, header)
+	header, cw := newWriter(ww, header)
 
 	pw, err := w.mw.CreatePart(header)
 	if err != nil {
