@@ -54,12 +54,21 @@ func Read(r io.Reader) (*Entity, error) {
 	return NewEntity(h, br), nil
 }
 
-// PartsReader returns a Reader that reads parts from this entity's body. If
-// this entity is not multipart, it returns nil.
-func (e *Entity) PartsReader() *Reader {
+// MultipartReader returns a MultipartReader that reads parts from this entity's
+// body. If this entity is not multipart, it returns nil.
+func (e *Entity) MultipartReader() *MultipartReader {
 	if !strings.HasPrefix(e.mediaType, "multipart/") {
 		return nil
 	}
+	return &MultipartReader{multipart.NewReader(e, e.mediaParams["boundary"])}
+}
 
-	return &Reader{multipart.NewReader(e, e.mediaParams["boundary"])}
+// WriteTo writes this entity to w.
+func (e *Entity) WriteTo(w io.Writer) error {
+	ew, err := CreateWriter(w, e.Header)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(ew, e.Reader)
+	return err
 }

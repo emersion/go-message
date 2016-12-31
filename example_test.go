@@ -18,11 +18,11 @@ func ExampleReader() {
 		log.Fatal(err)
 	}
 
-	if pr := m.PartsReader(); pr != nil {
+	if mr := m.MultipartReader(); mr != nil {
 		// This is a multipart message
 		log.Println("This is a multipart message containing:")
 		for {
-			p, err := pr.NextPart()
+			p, err := mr.NextPart()
 			if err == io.EOF {
 				break
 			} else if err != nil {
