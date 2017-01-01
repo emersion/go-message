@@ -36,7 +36,9 @@ type Writer struct {
 	mw *multipart.Writer
 }
 
-func newWriter(w io.Writer, header textproto.MIMEHeader) (textproto.MIMEHeader, *Writer) {
+// newWriter creates a new Writer writing to w with the provided header. Nothing
+// is written to w when it is called. header is modified in-place.
+func newWriter(w io.Writer, header textproto.MIMEHeader) *Writer {
 	ww := &Writer{w: w}
 
 	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
@@ -58,17 +60,15 @@ func newWriter(w io.Writer, header textproto.MIMEHeader) (textproto.MIMEHeader, 
 		ww.c = wc
 	}
 
-	return header, ww
+	return ww
 }
 
 // CreateWriter creates a new Writer writing to w.
 func CreateWriter(w io.Writer, header textproto.MIMEHeader) (*Writer, error) {
-	header, ww := newWriter(w, header)
-
+	ww := newWriter(w, header)
 	if err := writeHeader(w, header); err != nil {
 		return nil, err
 	}
-
 	return ww, nil
 }
 
@@ -92,8 +92,7 @@ func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 	// cw -> ww -> pw -> w.mw -> w.w
 
 	ww := &struct{ io.Writer }{nil}
-	header, cw := newWriter(ww, header)
-
+	cw := newWriter(ww, header)
 	pw, err := w.mw.CreatePart(header)
 	if err != nil {
 		return nil, err
