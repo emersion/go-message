@@ -8,6 +8,8 @@ import (
 
 // MultipartReader is an iterator over parts in a MIME multipart body.
 type MultipartReader interface {
+	io.Closer
+
 	// NextPart returns the next part in the multipart or an error. When there are
 	// no more parts, the error io.EOF is returned.
 	NextPart() (*Entity, error)
@@ -24,6 +26,11 @@ func (r *multipartReader) NextPart() (*Entity, error) {
 		return nil, err
 	}
 	return NewEntity(p.Header, p), nil
+}
+
+// Close implements io.Closer.
+func (r *multipartReader) Close() error {
+	return nil
 }
 
 type multipartBody struct {

@@ -73,6 +73,7 @@ func testMultipart(t *testing.T, e *Entity) {
 	if mr == nil {
 		t.Fatalf("Expected MultipartReader not to return nil")
 	}
+	defer mr.Close()
 
 	i := 0
 	for {
