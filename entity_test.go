@@ -53,6 +53,16 @@ func testMakeMultipart() *Entity {
 	return NewMultipart(h, []*Entity{e1, e2})
 }
 
+const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
+	"Content-Type: text/plain\r\n" +
+	"\r\n" +
+	"Text part\r\n" +
+	"--IMTHEBOUNDARY\r\n" +
+	"Content-Type: text/html\r\n" +
+	"\r\n" +
+	"<p>HTML part</p>\r\n" +
+	"--IMTHEBOUNDARY--\r\n"
+
 func TestNewMultipart(t *testing.T) {
 	mr := testMakeMultipart().MultipartReader()
 
@@ -93,6 +103,16 @@ func TestNewMultipart(t *testing.T) {
 	}
 }
 
+func TestNewMultipart_read(t *testing.T) {
+	e := testMakeMultipart()
+
+	if b, err := ioutil.ReadAll(e); err != nil {
+		t.Error("Expected no error while reading multipart body, got", err)
+	} else if s := string(b); s != testMultipartBody {
+		t.Errorf("Expected %q as multipart body but got %q", testMultipartBody, s)
+	}
+}
+
 func TestEntity_WriteTo(t *testing.T) {
 	e := testMakeEntity()
 
@@ -120,15 +140,7 @@ func TestEntity_WriteTo_multipart(t *testing.T) {
 
 	expected := "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +
 		"\r\n" +
-		"--IMTHEBOUNDARY\r\n" +
-		"Content-Type: text/plain\r\n" +
-		"\r\n" +
-		"Text part\r\n" +
-		"--IMTHEBOUNDARY\r\n" +
-		"Content-Type: text/html\r\n" +
-		"\r\n" +
-		"<p>HTML part</p>\r\n" +
-		"--IMTHEBOUNDARY--\r\n"
+		testMultipartBody
 
 	if s := b.String(); s != expected {
 		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
