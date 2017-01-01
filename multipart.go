@@ -85,12 +85,12 @@ func (m *multipartBody) NextPart() (*Entity, error) {
 
 func (m *multipartBody) writeTo(w *Writer) error {
 	for _, p := range m.parts {
-		pw, err := m.w.CreatePart(p.Header)
+		pw, err := w.CreatePart(p.Header)
 		if err != nil {
 			return err
 		}
 
-		if err := p.WriteTo(pw); err != nil {
+		if err := p.writeTo(pw); err != nil {
 			return err
 		}
 		if err := pw.Close(); err != nil {

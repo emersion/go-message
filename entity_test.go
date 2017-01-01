@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 	"net/textproto"
@@ -8,14 +9,18 @@ import (
 	"testing"
 )
 
-func TestNewEntity(t *testing.T) {
+func testMakeEntity() *Entity {
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Type", "text/plain; charset=US-ASCII")
 	h.Set("Content-Transfer-Encoding", "base64")
 
 	r := strings.NewReader("Y2Mgc2F2YQ==")
 
-	e := NewEntity(h, r)
+	return NewEntity(h, r)
+}
+
+func TestNewEntity(t *testing.T) {
+	e := testMakeEntity()
 
 	if e.Header.Get("Content-Transfer-Encoding") != "" {
 		t.Error("Expected Content-Transfer-Encoding to be unset")
@@ -44,7 +49,7 @@ func testMakeMultipart() *Entity {
 	e2 := NewEntity(h2, r2)
 
 	h := make(textproto.MIMEHeader)
-	h.Set("Content-Type", "multipart/alternative")
+	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
 	return NewMultipart(h, []*Entity{e1, e2})
 }
 
@@ -85,5 +90,47 @@ func TestNewMultipart(t *testing.T) {
 
 	if i != 2 {
 		t.Fatalf("Expected multipart entity to contain exactly 2 parts, got %v", i)
+	}
+}
+
+func TestEntity_WriteTo(t *testing.T) {
+	e := testMakeEntity()
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	expected := "Content-Type: text/plain; charset=utf-8\r\n" +
+		"\r\n" +
+		"cc sava"
+
+	if s := b.String(); s != expected {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
+	}
+}
+
+func TestEntity_WriteTo_multipart(t *testing.T) {
+	e := testMakeMultipart()
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	expected := "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +
+		"\r\n" +
+		"--IMTHEBOUNDARY\r\n" +
+		"Content-Type: text/plain\r\n" +
+		"\r\n" +
+		"Text part\r\n" +
+		"--IMTHEBOUNDARY\r\n" +
+		"Content-Type: text/html\r\n" +
+		"\r\n" +
+		"<p>HTML part</p>\r\n" +
+		"--IMTHEBOUNDARY--\r\n"
+
+	if s := b.String(); s != expected {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
 	}
 }

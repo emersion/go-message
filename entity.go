@@ -76,7 +76,18 @@ func (e *Entity) MultipartReader() MultipartReader {
 	return &multipartReader{multipart.NewReader(e, e.mediaParams["boundary"])}
 }
 
-// WriteTo writes this entity to w.
+// writeTo writes this entity's body to w (without the header).
+func (e *Entity) writeTo(w *Writer) error {
+	var err error
+	if mb, ok := e.Reader.(*multipartBody); ok {
+		err = mb.writeTo(w)
+	} else {
+		_, err = io.Copy(w, e.Reader)
+	}
+	return err
+}
+
+// WriteTo writes this entity's header and body to w.
 func (e *Entity) WriteTo(w io.Writer) error {
 	ew, err := CreateWriter(w, e.Header)
 	if err != nil {
@@ -84,10 +95,5 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	}
 	defer ew.Close()
 
-	if mb, ok := e.Reader.(*multipartBody); ok {
-		err = mb.writeTo(ew)
-	} else {
-		_, err = io.Copy(ew, e.Reader)
-	}
-	return err
+	return e.writeTo(ew)
 }
