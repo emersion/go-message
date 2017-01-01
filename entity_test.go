@@ -53,6 +53,9 @@ func testMakeMultipart() *Entity {
 	return NewMultipart(h, []*Entity{e1, e2})
 }
 
+const testMultipartHeader = "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +
+	"\r\n"
+
 const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
 	"Content-Type: text/plain\r\n" +
 	"\r\n" +
@@ -63,8 +66,13 @@ const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
 	"<p>HTML part</p>\r\n" +
 	"--IMTHEBOUNDARY--\r\n"
 
-func TestNewMultipart(t *testing.T) {
-	mr := testMakeMultipart().MultipartReader()
+var testMultipartText = testMultipartHeader + testMultipartBody
+
+func testMultipart(t *testing.T, e *Entity) {
+	mr := e.MultipartReader()
+	if mr == nil {
+		t.Fatalf("Expected MultipartReader not to return nil")
+	}
 
 	i := 0
 	for {
@@ -103,6 +111,10 @@ func TestNewMultipart(t *testing.T) {
 	}
 }
 
+func TestNewMultipart(t *testing.T) {
+	testMultipart(t, testMakeMultipart())
+}
+
 func TestNewMultipart_read(t *testing.T) {
 	e := testMakeMultipart()
 
@@ -111,6 +123,15 @@ func TestNewMultipart_read(t *testing.T) {
 	} else if s := string(b); s != testMultipartBody {
 		t.Errorf("Expected %q as multipart body but got %q", testMultipartBody, s)
 	}
+}
+
+func TestRead_multipart(t *testing.T) {
+	e, err := Read(strings.NewReader(testMultipartText))
+	if err != nil {
+		t.Fatal("Expected no error while reading multipart, got", err)
+	}
+
+	testMultipart(t, e)
 }
 
 func TestEntity_WriteTo(t *testing.T) {
@@ -138,11 +159,7 @@ func TestEntity_WriteTo_multipart(t *testing.T) {
 		t.Fatal("Expected no error while writing entity, got", err)
 	}
 
-	expected := "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +
-		"\r\n" +
-		testMultipartBody
-
-	if s := b.String(); s != expected {
-		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
+	if s := b.String(); s != testMultipartText {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", testMultipartText, s)
 	}
 }
