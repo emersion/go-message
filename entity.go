@@ -19,7 +19,8 @@ type Entity struct {
 	mediaParams map[string]string
 }
 
-// NewEntity makes a new Entity with the provided header and body.
+// NewEntity makes a new Entity with the provided header and body. The entity's
+// encoding and charset are automatically decoded to UTF-8.
 func NewEntity(header textproto.MIMEHeader, r io.Reader) *Entity {
 	r = decode(header.Get("Content-Transfer-Encoding"), r)
 	header.Del("Content-Transfer-Encoding")
@@ -53,7 +54,8 @@ func NewMultipart(header textproto.MIMEHeader, parts []*Entity) *Entity {
 	return NewEntity(header, r)
 }
 
-// Read reads a message from r.
+// Read reads a message from r. The message's encoding and charset are
+// automatically decoded to UTF-8.
 func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
 	h, err := textproto.NewReader(br).ReadMIMEHeader()

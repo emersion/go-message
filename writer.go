@@ -63,7 +63,8 @@ func newWriter(w io.Writer, header textproto.MIMEHeader) *Writer {
 	return ww
 }
 
-// CreateWriter creates a new Writer writing to w.
+// CreateWriter creates a new Writer writing to w. If header contains an
+// encoding, data written to the Writer will automatically be encoded with it.
 func CreateWriter(w io.Writer, header textproto.MIMEHeader) (*Writer, error) {
 	ww := newWriter(w, header)
 	if err := writeHeader(w, header); err != nil {
