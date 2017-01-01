@@ -74,7 +74,7 @@ func (m *multipartBody) Close() error {
 
 // NextPart implements MultipartReader.
 func (m *multipartBody) NextPart() (*Entity, error) {
-	if m.i > len(m.parts) {
+	if m.i >= len(m.parts) {
 		return nil, io.EOF
 	}
 
