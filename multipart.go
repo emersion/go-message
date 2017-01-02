@@ -54,7 +54,7 @@ func (m *multipartBody) Read(p []byte) (n int, err error) {
 		m.i = len(m.parts)
 
 		go func() {
-			if err := m.writeTo(m.w); err != nil {
+			if err := m.writeBodyTo(m.w); err != nil {
 				w.CloseWithError(err)
 				return
 			}
@@ -90,14 +90,14 @@ func (m *multipartBody) NextPart() (*Entity, error) {
 	return part, nil
 }
 
-func (m *multipartBody) writeTo(w *Writer) error {
+func (m *multipartBody) writeBodyTo(w *Writer) error {
 	for _, p := range m.parts {
 		pw, err := w.CreatePart(p.Header)
 		if err != nil {
 			return err
 		}
 
-		if err := p.writeTo(pw); err != nil {
+		if err := p.writeBodyTo(pw); err != nil {
 			return err
 		}
 		if err := pw.Close(); err != nil {
