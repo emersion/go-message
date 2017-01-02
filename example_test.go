@@ -76,45 +76,54 @@ func Example_transform() {
 		log.Fatal(err)
 	}
 
-	// Define a function that transforms entities
-	// For instance, let's add "This message is powered by Go" at the end of each
-	// text entity.
+	// We'll add "This message is powered by Go" at the end of each text entity.
 	poweredBy := "\n\nThis message is powered by Go."
 
-	var transform func(e *messages.Entity) *messages.Entity
-	transform = func(e *messages.Entity) *messages.Entity {
+	var b bytes.Buffer
+	w, err := messages.CreateWriter(&b, m.Header)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Define a function that transforms messages.
+	var transform func(w *messages.Writer, e *messages.Entity) error
+	transform = func(w *messages.Writer, e *messages.Entity) error {
 		if mr := e.MultipartReader(); mr != nil {
 			// This is a multipart entity, transform each of its parts
-			var parts []*messages.Entity
 			for {
 				p, err := mr.NextPart()
 				if err == io.EOF {
 					break
 				} else if err != nil {
-					log.Fatal(err)
+					return err
 				}
 
-				p = transform(p)
-				parts = append(parts, p)
-			}
+				pw, err := w.CreatePart(p.Header)
+				if err != nil {
+					return err
+				}
 
-			return messages.NewMultipart(e.Header, parts)
-		} else {
-			if strings.HasPrefix(m.Header.Get("Content-Type"), "text/") {
-				r := io.MultiReader(m.Body, strings.NewReader(poweredBy))
-				return messages.NewEntity(e.Header, r)
+				if err := transform(pw, p); err != nil {
+					return err
+				}
+
+				pw.Close()
 			}
-			return e
+			return nil
+		} else {
+			body := e.Body
+			if strings.HasPrefix(m.Header.Get("Content-Type"), "text/") {
+				body = io.MultiReader(body, strings.NewReader(poweredBy))
+			}
+			_, err := io.Copy(w, body)
+			return err
 		}
 	}
 
-	m = transform(m)
-
-	// We can now format the message
-	var b bytes.Buffer
-	if err := m.WriteTo(&b); err != nil {
+	if err := transform(w, m); err != nil {
 		log.Fatal(err)
 	}
+	w.Close()
 
 	log.Println(b.String())
 }
