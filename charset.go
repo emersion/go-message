@@ -17,10 +17,11 @@ var charsets = map[string]encoding.Encoding{
 // charsetReader returns an io.Reader that converts the provided charset to
 // UTF-8.
 func charsetReader(charset string, input io.Reader) (io.Reader, error) {
-	if strings.EqualFold("utf-8", charset) {
+	charset = strings.ToLower(charset)
+	if charset == "utf-8" || charset == "us-ascii" {
 		return input, nil
 	}
-	if enc, ok := charsets[strings.ToLower(charset)]; ok {
+	if enc, ok := charsets[charset]; ok {
 		return enc.NewDecoder().Reader(input), nil
 	}
 	return nil, fmt.Errorf("messages: unhandled charset %q", charset)

@@ -8,6 +8,8 @@ import (
 
 // MultipartReader is an iterator over parts in a MIME multipart body.
 type MultipartReader interface {
+	io.Closer
+
 	// NextPart returns the next part in the multipart or an error. When there are
 	// no more parts, the error io.EOF is returned.
 	NextPart() (*Entity, error)
@@ -26,6 +28,11 @@ func (r *multipartReader) NextPart() (*Entity, error) {
 	return NewEntity(p.Header, p), nil
 }
 
+// Close implements io.Closer.
+func (r *multipartReader) Close() error {
+	return nil
+}
+
 type multipartBody struct {
 	header textproto.MIMEHeader
 	parts  []*Entity
@@ -41,7 +48,7 @@ func (m *multipartBody) Read(p []byte) (n int, err error) {
 	if m.r == nil {
 		r, w := io.Pipe()
 		m.r = r
-		_, m.w = newWriter(w, m.header)
+		m.w = newWriter(w, m.header)
 
 		// Prevent calls to NextPart to succeed
 		m.i = len(m.parts)
@@ -74,7 +81,7 @@ func (m *multipartBody) Close() error {
 
 // NextPart implements MultipartReader.
 func (m *multipartBody) NextPart() (*Entity, error) {
-	if m.i > len(m.parts) {
+	if m.i >= len(m.parts) {
 		return nil, io.EOF
 	}
 
@@ -85,12 +92,12 @@ func (m *multipartBody) NextPart() (*Entity, error) {
 
 func (m *multipartBody) writeTo(w *Writer) error {
 	for _, p := range m.parts {
-		pw, err := m.w.CreatePart(p.Header)
+		pw, err := w.CreatePart(p.Header)
 		if err != nil {
 			return err
 		}
 
-		if err := p.WriteTo(pw); err != nil {
+		if err := p.writeTo(pw); err != nil {
 			return err
 		}
 		if err := pw.Close(); err != nil {

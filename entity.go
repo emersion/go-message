@@ -19,7 +19,8 @@ type Entity struct {
 	mediaParams map[string]string
 }
 
-// NewEntity makes a new Entity with the provided header and body.
+// NewEntity makes a new Entity with the provided header and body. The entity's
+// encoding and charset are automatically decoded to UTF-8.
 func NewEntity(header textproto.MIMEHeader, body io.Reader) *Entity {
 	body = decode(header.Get("Content-Transfer-Encoding"), body)
 	header.Del("Content-Transfer-Encoding")
@@ -53,7 +54,8 @@ func NewMultipart(header textproto.MIMEHeader, parts []*Entity) *Entity {
 	return NewEntity(header, r)
 }
 
-// Read reads a message from r.
+// Read reads a message from r. The message's encoding and charset are
+// automatically decoded to UTF-8.
 func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
 	h, err := textproto.NewReader(br).ReadMIMEHeader()
@@ -76,7 +78,18 @@ func (e *Entity) MultipartReader() MultipartReader {
 	return &multipartReader{multipart.NewReader(e.Body, e.mediaParams["boundary"])}
 }
 
-// WriteTo writes this entity to w.
+// writeTo writes this entity's body to w (without the header).
+func (e *Entity) writeTo(w *Writer) error {
+	var err error
+	if mb, ok := e.Body.(*multipartBody); ok {
+		err = mb.writeTo(w)
+	} else {
+		_, err = io.Copy(w, e.Body)
+	}
+	return err
+}
+
+// WriteTo writes this entity's header and body to w.
 func (e *Entity) WriteTo(w io.Writer) error {
 	ew, err := CreateWriter(w, e.Header)
 	if err != nil {
@@ -84,10 +97,5 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	}
 	defer ew.Close()
 
-	if mb, ok := e.Body.(*multipartBody); ok {
-		err = mb.writeTo(ew)
-	} else {
-		_, err = io.Copy(ew, e.Body)
-	}
-	return err
+	return e.writeTo(ew)
 }
