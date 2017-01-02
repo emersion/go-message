@@ -14,9 +14,9 @@ var charsets = map[string]encoding.Encoding{
 	"windows-1252": charmap.Windows1252,
 }
 
-// charsetReader returns an io.Reader that converts the provided charset to
+// CharsetReader returns an io.Reader that converts the provided charset to
 // UTF-8.
-func charsetReader(charset string, input io.Reader) (io.Reader, error) {
+func CharsetReader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
 	if charset == "utf-8" || charset == "us-ascii" {
 		return input, nil

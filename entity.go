@@ -12,8 +12,8 @@ import (
 // An Entity is either a message or a one of the parts in the body of a
 // multipart entity.
 type Entity struct {
-	Header    textproto.MIMEHeader // The entity's header.
-	Body      io.Reader                      // The entity's body.
+	Header textproto.MIMEHeader // The entity's header.
+	Body   io.Reader            // The entity's body.
 
 	mediaType   string
 	mediaParams map[string]string
@@ -27,7 +27,7 @@ func NewEntity(header textproto.MIMEHeader, body io.Reader) *Entity {
 
 	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
 	if charset, ok := mediaParams["charset"]; ok {
-		if converted, err := charsetReader(charset, body); err == nil {
+		if converted, err := CharsetReader(charset, body); err == nil {
 			body = converted
 		}
 
@@ -37,7 +37,7 @@ func NewEntity(header textproto.MIMEHeader, body io.Reader) *Entity {
 
 	return &Entity{
 		Header:      header,
-		Body:      body,
+		Body:        body,
 		mediaType:   mediaType,
 		mediaParams: mediaParams,
 	}
