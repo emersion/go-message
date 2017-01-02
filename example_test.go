@@ -101,7 +101,7 @@ func Example_transform() {
 			return messages.NewMultipart(e.Header, parts)
 		} else {
 			if strings.HasPrefix(m.Header.Get("Content-Type"), "text/") {
-				r := io.MultiReader(m.Reader, strings.NewReader(poweredBy))
+				r := io.MultiReader(m.Body, strings.NewReader(poweredBy))
 				return messages.NewEntity(e.Header, r)
 			}
 			return e

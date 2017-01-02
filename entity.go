@@ -12,22 +12,22 @@ import (
 // An Entity is either a message or a one of the parts in the body of a
 // multipart entity.
 type Entity struct {
-	io.Reader                      // The entity's body.
 	Header    textproto.MIMEHeader // The entity's header.
+	Body      io.Reader                      // The entity's body.
 
 	mediaType   string
 	mediaParams map[string]string
 }
 
 // NewEntity makes a new Entity with the provided header and body.
-func NewEntity(header textproto.MIMEHeader, r io.Reader) *Entity {
-	r = decode(header.Get("Content-Transfer-Encoding"), r)
+func NewEntity(header textproto.MIMEHeader, body io.Reader) *Entity {
+	body = decode(header.Get("Content-Transfer-Encoding"), body)
 	header.Del("Content-Transfer-Encoding")
 
 	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
 	if charset, ok := mediaParams["charset"]; ok {
-		if converted, err := charsetReader(charset, r); err == nil {
-			r = converted
+		if converted, err := charsetReader(charset, body); err == nil {
+			body = converted
 		}
 
 		mediaParams["charset"] = "utf-8"
@@ -35,8 +35,8 @@ func NewEntity(header textproto.MIMEHeader, r io.Reader) *Entity {
 	}
 
 	return &Entity{
-		Reader:      r,
 		Header:      header,
+		Body:      body,
 		mediaType:   mediaType,
 		mediaParams: mediaParams,
 	}
@@ -70,10 +70,10 @@ func (e *Entity) MultipartReader() MultipartReader {
 	if !strings.HasPrefix(e.mediaType, "multipart/") {
 		return nil
 	}
-	if mb, ok := e.Reader.(*multipartBody); ok {
+	if mb, ok := e.Body.(*multipartBody); ok {
 		return mb
 	}
-	return &multipartReader{multipart.NewReader(e, e.mediaParams["boundary"])}
+	return &multipartReader{multipart.NewReader(e.Body, e.mediaParams["boundary"])}
 }
 
 // WriteTo writes this entity to w.
@@ -84,10 +84,10 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	}
 	defer ew.Close()
 
-	if mb, ok := e.Reader.(*multipartBody); ok {
+	if mb, ok := e.Body.(*multipartBody); ok {
 		err = mb.writeTo(ew)
 	} else {
-		_, err = io.Copy(ew, e.Reader)
+		_, err = io.Copy(ew, e.Body)
 	}
 	return err
 }
