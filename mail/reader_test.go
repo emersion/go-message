@@ -40,8 +40,7 @@ func ExampleReader() {
 	}
 }
 
-func TestReader(t *testing.T) {
-	r := strings.NewReader(mailString)
+func testReader(t *testing.T, r io.Reader) {
 	mr, err := mail.CreateReader(r)
 	if err != nil {
 		log.Fatal(err)
@@ -97,4 +96,8 @@ func TestReader(t *testing.T) {
 	if i != 2 {
 		t.Errorf("Expected exactly two parts but got %v", i)
 	}
+}
+
+func TestReader(t *testing.T) {
+	testReader(t, strings.NewReader(mailString))
 }
