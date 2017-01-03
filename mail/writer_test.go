@@ -1,0 +1,59 @@
+package mail_test
+
+import (
+	"bytes"
+	"io"
+	"log"
+	"time"
+
+	"github.com/emersion/go-messages/mail"
+)
+
+func ExampleWriter() {
+	var b bytes.Buffer
+
+	from := []*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
+	to := []*mail.Address{{"Taki Tachibana", "taki.tachibana@example.org"}}
+
+	// Create our mail header
+	h := mail.NewHeader()
+	h.SetDate(time.Now())
+	h.SetAddressList("From", from)
+	h.SetAddressList("To", to)
+
+	// Create a new mail writer
+	mw, err := mail.CreateWriter(&b, h)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create a text part
+	tw, err := mw.CreateText()
+	if err != nil {
+		log.Fatal(err)
+	}
+	th := mail.NewTextHeader()
+	th.Set("Content-Type", "text/plain")
+	w, err := tw.CreatePart(th)
+	if err != nil {
+		log.Fatal(err)
+	}
+	io.WriteString(w, "Who are you?")
+	w.Close()
+	tw.Close()
+
+	// Create an attachment
+	ah := mail.NewAttachmentHeader()
+	ah.Set("Content-Type", "image/jpeg")
+	ah.SetFilename("picture.jpg")
+	w, err = mw.CreateAttachment(ah)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// TODO: write a JPEG file to w
+	w.Close()
+
+	mw.Close()
+
+	log.Println(b.String())
+}

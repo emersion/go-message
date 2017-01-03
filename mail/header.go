@@ -19,12 +19,12 @@ func NewHeader() Header {
 }
 
 // AddressList parses the named header field as a list of addresses.
-func (h Header) AddressList(key string) ([]*mail.Address, error) {
-	return mail.Header(h.MIMEHeader).AddressList(key)
+func (h Header) AddressList(key string) ([]*Address, error) {
+	return parseAddressList(h.Get(key))
 }
 
 // SetAddressList formats the named header to the provided list of addresses.
-func (h Header) SetAddressList(key string, addrs []*mail.Address) {
+func (h Header) SetAddressList(key string, addrs []*Address) {
 	h.Set(key, formatAddressList(addrs))
 }
 
