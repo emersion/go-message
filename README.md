@@ -10,6 +10,12 @@ A Go library for the Internet Message Format. It implements:
 * [RFC 5322](https://tools.ietf.org/html/rfc5322): Internet Message Format
 * [RFC 2045](https://tools.ietf.org/html/rfc2045): Multipurpose Internet Mail Extensions
 
+## Features
+
+* Streaming API
+* Automatic encoding and charset handling
+* A [`mail`](https://godoc.org/github.com/emersion/go-message/mail) subpackage to read and write mail messages
+
 ## License
 
 MIT
