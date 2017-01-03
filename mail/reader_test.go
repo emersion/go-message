@@ -109,7 +109,7 @@ func TestReader_nonMultipart(t *testing.T) {
 
 	mr, err := mail.CreateReader(strings.NewReader(s))
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal("Expected no error while creating reader, got:", err)
 	}
 	defer mr.Close()
 
@@ -128,6 +128,23 @@ func TestReader_nonMultipart(t *testing.T) {
 	} else if string(b) != expectedBody {
 		t.Errorf("Expected part body to be:\n%v\nbut got:\n%v", expectedBody, string(b))
 	}
+
+	if _, err := mr.NextPart(); err != io.EOF {
+		t.Fatal("Expected io.EOF while reading part, but got:", err)
+	}
+}
+
+func TestReader_closeImmediately(t *testing.T) {
+	s := "Content-Type: text/plain\r\n" +
+		"\r\n" +
+		"Who are you?"
+
+	mr, err := mail.CreateReader(strings.NewReader(s))
+	if err != nil {
+		t.Fatal("Expected no error while creating reader, got:", err)
+	}
+
+	mr.Close()
 
 	if _, err := mr.NextPart(); err != io.EOF {
 		t.Fatal("Expected io.EOF while reading part, but got:", err)
