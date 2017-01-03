@@ -101,3 +101,35 @@ func testReader(t *testing.T, r io.Reader) {
 func TestReader(t *testing.T) {
 	testReader(t, strings.NewReader(mailString))
 }
+
+func TestReader_nonMultipart(t *testing.T) {
+	s := "Content-Type: text/plain\r\n" +
+		"\r\n" +
+		"Who are you?"
+
+	mr, err := mail.CreateReader(strings.NewReader(s))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer mr.Close()
+
+	p, err := mr.NextPart()
+	if err != nil {
+		t.Fatal("Expected no error while reading part, got:", err)
+	}
+
+	if _, ok := p.Header.(mail.TextHeader); !ok {
+		t.Fatalf("Expected a TextHeader, but got a %T", p.Header)
+	}
+
+	expectedBody := "Who are you?"
+	if b, err := ioutil.ReadAll(p.Body); err != nil {
+		t.Error("Expected no error while reading part body, but got:", err)
+	} else if string(b) != expectedBody {
+		t.Errorf("Expected part body to be:\n%v\nbut got:\n%v", expectedBody, string(b))
+	}
+
+	if _, err := mr.NextPart(); err != io.EOF {
+		t.Fatal("Expected io.EOF while reading part, but got:", err)
+	}
+}
