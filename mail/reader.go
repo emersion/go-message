@@ -24,6 +24,8 @@ func (t *Text) IsHTML() bool {
 
 // A Reader reads mail parts.
 type Reader struct {
+	Header  Header
+
 	e       *messages.Entity
 	readers *list.List
 }
@@ -40,7 +42,18 @@ func NewReader(e *messages.Entity) *Reader {
 
 	l := list.New()
 	l.PushBack(mr)
-	return &Reader{e, l}
+
+	return &Reader{Header(e.Header), e, l}
+}
+
+// CreateReader reads a mail header from r and returns a new mail reader.
+func CreateReader(r io.Reader) (*Reader, error) {
+	e, err := messages.Read(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewReader(e), nil
 }
 
 // NextPart returns the next mail part, which can be either a Text or an
