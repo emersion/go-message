@@ -8,20 +8,26 @@ import (
 	"github.com/emersion/go-messages"
 )
 
-// An Attachment represents a mail attachment.
-type Attachment struct {
-	Header textproto.MIMEHeader
-	Body   io.Reader
+// An AttachmentHeader represents an attachment's header.
+type AttachmentHeader struct {
+	textproto.MIMEHeader
 }
 
-// Filename parses the attachment filename.
-func (a *Attachment) Filename() (string, error) {
-	_, params, err := mime.ParseMediaType(a.Header.Get("Content-Disposition"))
+// NewAttachmentHeader creates a new AttachmentHeader.
+func NewAttachmentHeader() AttachmentHeader {
+	h := AttachmentHeader{make(textproto.MIMEHeader)}
+	h.Set("Content-Disposition", "attachment")
+	return h
+}
+
+// Filename parses the attachment's filename.
+func (h AttachmentHeader) Filename() (string, error) {
+	_, params, err := mime.ParseMediaType(h.Get("Content-Disposition"))
 
 	filename, ok := params["filename"]
 	if !ok {
 		// Using "name" in Content-Type is discouraged
-		_, params, err = mime.ParseMediaType(a.Header.Get("Content-Type"))
+		_, params, err = mime.ParseMediaType(h.Get("Content-Type"))
 		filename = params["name"]
 	}
 
@@ -37,9 +43,15 @@ func (a *Attachment) Filename() (string, error) {
 	return filename, err
 }
 
-// SetFilename formats the attachment filename.
-func (a *Attachment) SetFilename(filename string) {
+// SetFilename formats the attachment's filename.
+func (h AttachmentHeader) SetFilename(filename string) {
 	filename = mime.QEncoding.Encode("utf-8", filename)
 	dispParams := map[string]string{"filename": filename}
-	a.Header.Set("Content-Disposition", mime.FormatMediaType("attachment", dispParams))
+	h.Set("Content-Disposition", mime.FormatMediaType("attachment", dispParams))
+}
+
+// An Attachment represents a mail attachment.
+type Attachment struct {
+	Header AttachmentHeader
+	Body   io.Reader
 }
