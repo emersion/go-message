@@ -1,7 +1,6 @@
 package mail
 
 import (
-	"io"
 	"mime"
 	"net/textproto"
 
@@ -48,10 +47,4 @@ func (h AttachmentHeader) SetFilename(filename string) {
 	filename = mime.QEncoding.Encode("utf-8", filename)
 	dispParams := map[string]string{"filename": filename}
 	h.Set("Content-Disposition", mime.FormatMediaType("attachment", dispParams))
-}
-
-// An Attachment represents a mail attachment.
-type Attachment struct {
-	Header AttachmentHeader
-	Body   io.Reader
 }

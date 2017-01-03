@@ -1,7 +1,6 @@
 package mail
 
 import (
-	"io"
 	"mime"
 	"net/textproto"
 )
@@ -22,10 +21,4 @@ func NewTextHeader() TextHeader {
 func (h TextHeader) IsHTML() bool {
 	mediaType, _, _ := mime.ParseMediaType(h.Get("Content-Type"))
 	return mediaType == "text/html"
-}
-
-// A Text represents a message's text.
-type Text struct {
-	Header TextHeader
-	Body   io.Reader
 }
