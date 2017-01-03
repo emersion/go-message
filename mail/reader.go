@@ -7,7 +7,7 @@ import (
 	"net/textproto"
 	"strings"
 
-	"github.com/emersion/go-messages"
+	"github.com/emersion/go-message"
 )
 
 // A PartHeader is a mail part header. It contains convenience functions to get
@@ -36,18 +36,18 @@ type Part struct {
 type Reader struct {
 	Header Header
 
-	e       *messages.Entity
+	e       *message.Entity
 	readers *list.List
 }
 
 // NewReader creates a new mail reader.
-func NewReader(e *messages.Entity) *Reader {
+func NewReader(e *message.Entity) *Reader {
 	mr := e.MultipartReader()
 	if mr == nil {
 		// Artificially create a multipart entity
 		h := make(textproto.MIMEHeader)
 		h.Set("Content-Type", "multipart/mixed")
-		mr = messages.NewMultipart(h, []*messages.Entity{e}).MultipartReader()
+		mr = message.NewMultipart(h, []*message.Entity{e}).MultipartReader()
 	}
 
 	l := list.New()
@@ -58,7 +58,7 @@ func NewReader(e *messages.Entity) *Reader {
 
 // CreateReader reads a mail header from r and returns a new mail reader.
 func CreateReader(r io.Reader) (*Reader, error) {
-	e, err := messages.Read(r)
+	e, err := message.Read(r)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func CreateReader(r io.Reader) (*Reader, error) {
 func (r *Reader) NextPart() (*Part, error) {
 	for r.readers.Len() > 0 {
 		e := r.readers.Back()
-		mr := e.Value.(messages.MultipartReader)
+		mr := e.Value.(message.MultipartReader)
 
 		p, err := mr.NextPart()
 		if err == io.EOF {
@@ -105,7 +105,7 @@ func (r *Reader) NextPart() (*Part, error) {
 func (r *Reader) Close() error {
 	for r.readers.Len() > 0 {
 		e := r.readers.Back()
-		mr := e.Value.(messages.MultipartReader)
+		mr := e.Value.(message.MultipartReader)
 
 		if err := mr.Close(); err != nil {
 			return err

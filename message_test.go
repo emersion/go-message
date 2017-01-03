@@ -1,4 +1,4 @@
-package messages_test
+package message_test
 
 import (
 	"bytes"
@@ -7,14 +7,14 @@ import (
 	"net/textproto"
 	"strings"
 
-	"github.com/emersion/go-messages"
+	"github.com/emersion/go-message"
 )
 
 func ExampleReader() {
 	// Let's assume r is an io.Reader that contains a message.
 	var r io.Reader
 
-	m, err := messages.Read(r)
+	m, err := message.Read(r)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func ExampleWriter() {
 	var b bytes.Buffer
 
 	h := textproto.MIMEHeader{"Content-Type": {"multipart/alternative"}}
-	w, err := messages.CreateWriter(&b, h)
+	w, err := message.CreateWriter(&b, h)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func Example_transform() {
 	// Let's assume r is an io.Reader that contains a message.
 	var r io.Reader
 
-	m, err := messages.Read(r)
+	m, err := message.Read(r)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,14 +80,14 @@ func Example_transform() {
 	poweredBy := "\n\nThis message is powered by Go."
 
 	var b bytes.Buffer
-	w, err := messages.CreateWriter(&b, m.Header)
+	w, err := message.CreateWriter(&b, m.Header)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Define a function that transforms messages.
-	var transform func(w *messages.Writer, e *messages.Entity) error
-	transform = func(w *messages.Writer, e *messages.Entity) error {
+	// Define a function that transforms message.
+	var transform func(w *message.Writer, e *message.Entity) error
+	transform = func(w *message.Writer, e *message.Entity) error {
 		if mr := e.MultipartReader(); mr != nil {
 			// This is a multipart entity, transform each of its parts
 			for {

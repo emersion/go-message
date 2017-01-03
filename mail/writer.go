@@ -4,17 +4,17 @@ import (
 	"io"
 	"net/textproto"
 
-	"github.com/emersion/go-messages"
+	"github.com/emersion/go-message"
 )
 
 type Writer struct {
-	mw *messages.Writer
+	mw *message.Writer
 }
 
 func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	header.Set("Content-Type", "multipart/mixed")
 
-	mw, err := messages.CreateWriter(w, header.MIMEHeader)
+	mw, err := message.CreateWriter(w, header.MIMEHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (w *Writer) Close() error {
 }
 
 type TextWriter struct {
-	mw *messages.Writer
+	mw *message.Writer
 }
 
 func (w *TextWriter) CreatePart(header TextHeader) (io.WriteCloser, error) {

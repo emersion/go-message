@@ -4,7 +4,7 @@ import (
 	"mime"
 	"net/textproto"
 
-	"github.com/emersion/go-messages"
+	"github.com/emersion/go-message"
 )
 
 // An AttachmentHeader represents an attachment's header.
@@ -34,7 +34,7 @@ func (h AttachmentHeader) Filename() (string, error) {
 		return filename, err
 	}
 
-	dec := &mime.WordDecoder{CharsetReader: messages.CharsetReader}
+	dec := &mime.WordDecoder{CharsetReader: message.CharsetReader}
 	decoded, err := dec.DecodeHeader(filename)
 	if err == nil {
 		filename = decoded

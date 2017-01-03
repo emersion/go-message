@@ -3,7 +3,7 @@ package mail_test
 import (
 	"testing"
 
-	"github.com/emersion/go-messages/mail"
+	"github.com/emersion/go-message/mail"
 )
 
 func TestAttachmentHeader_Filename_inContentType(t *testing.T) {
