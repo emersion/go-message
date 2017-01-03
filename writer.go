@@ -84,7 +84,8 @@ func (w *Writer) Close() error {
 }
 
 // CreatePart returns a Writer to a new part in this multipart entity. If this
-// entity is not multipart, it fails.
+// entity is not multipart, it fails. The body of the part should be written to
+// the returned io.WriteCloser.
 func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 	if w.mw == nil {
 		return nil, errors.New("messages: cannot create a part in a non-multipart message")

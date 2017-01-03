@@ -32,7 +32,7 @@ type Part struct {
 	Body   io.Reader
 }
 
-// A Reader reads mail parts.
+// A Reader reads a mail message.
 type Reader struct {
 	Header Header
 
