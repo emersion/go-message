@@ -12,9 +12,9 @@ type TextHeader struct {
 
 // NewTextHeader creates a new message text header.
 func NewTextHeader() TextHeader {
-	h := make(textproto.MIMEHeader)
+	h := TextHeader{make(textproto.MIMEHeader)}
 	h.Set("Content-Disposition", "inline")
-	return TextHeader{h}
+	return h
 }
 
 // IsHTML checks if this text is formatted using HTML.
