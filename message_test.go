@@ -10,7 +10,7 @@ import (
 	"github.com/emersion/go-message"
 )
 
-func ExampleReader() {
+func ExampleRead() {
 	// Let's assume r is an io.Reader that contains a message.
 	var r io.Reader
 
