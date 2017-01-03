@@ -34,7 +34,7 @@ type Part struct {
 
 // A Reader reads mail parts.
 type Reader struct {
-	Header  Header
+	Header Header
 
 	e       *messages.Entity
 	readers *list.List
