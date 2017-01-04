@@ -30,7 +30,7 @@ var testEncodings = []struct{
 	},
 	{
 		enc: "quoted-printable",
-		encoded: "caf=E9",
+		encoded: "caf=C3=A9",
 		decoded: "café",
 	},
 	{
@@ -40,7 +40,7 @@ var testEncodings = []struct{
 	},
 }
 
-func Testdecode(t *testing.T) {
+func TestDecode(t *testing.T) {
 	for _, test := range testEncodings {
 		r := decode(test.enc, strings.NewReader(test.encoded))
 		if b, err := ioutil.ReadAll(r); err != nil {
@@ -51,7 +51,7 @@ func Testdecode(t *testing.T) {
 	}
 }
 
-func Testencode(t *testing.T) {
+func TestEncode(t *testing.T) {
 	for _, test := range testEncodings {
 		var b bytes.Buffer
 		wc := encode(test.enc, &b)
