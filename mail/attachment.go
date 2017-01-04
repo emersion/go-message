@@ -16,6 +16,7 @@ type AttachmentHeader struct {
 func NewAttachmentHeader() AttachmentHeader {
 	h := AttachmentHeader{make(textproto.MIMEHeader)}
 	h.Set("Content-Disposition", "attachment")
+	h.Set("Content-Transfer-Encoding", "base64")
 	return h
 }
 

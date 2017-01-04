@@ -14,6 +14,7 @@ type TextHeader struct {
 func NewTextHeader() TextHeader {
 	h := TextHeader{make(textproto.MIMEHeader)}
 	h.Set("Content-Disposition", "inline")
+	h.Set("Content-Transfer-Encoding", "quoted-printable")
 	return h
 }
 
