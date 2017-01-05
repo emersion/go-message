@@ -11,10 +11,12 @@ import (
 func TestHeader(t *testing.T) {
 	date := time.Unix(1466253744, 0)
 	from := []*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
+	subject := "Café"
 
 	h := mail.NewHeader()
 	h.SetAddressList("From", from)
 	h.SetDate(date)
+	h.SetSubject(subject)
 
 	if got, err := h.Date(); err != nil {
 		t.Error("Expected no error while parsing header date, got:", err)
@@ -26,5 +28,11 @@ func TestHeader(t *testing.T) {
 		t.Error("Expected no error while parsing header address list, got:", err)
 	} else if !reflect.DeepEqual(got, from) {
 		t.Errorf("Expected header address list to be %v, but got %v", from, got)
+	}
+
+	if got, err := h.Subject(); err != nil {
+		t.Error("Expected no error while parsing header subject, got:", err)
+	} else if got != subject {
+		t.Errorf("Expected header subject to be %v, but got %v", subject, got)
 	}
 }

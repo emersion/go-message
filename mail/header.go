@@ -40,10 +40,10 @@ func (h Header) SetDate(t time.Time) {
 	h.Set("Date", t.Format(dateLayout))
 }
 
-// Subject parses the Subject header field.
-func (h Header) Subject() string {
-	s, _ := internal.DecodeHeader(h.Get("Subject"))
-	return s
+// Subject parses the Subject header field. If there is an error, the raw field
+// value is returned alongside the error.
+func (h Header) Subject() (string, error) {
+	return internal.DecodeHeader(h.Get("Subject"))
 }
 
 // SetSubject formats the Subject header field.
