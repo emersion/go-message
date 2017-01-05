@@ -2,39 +2,39 @@ package message
 
 import (
 	"bytes"
-	"strings"
 	"io"
 	"io/ioutil"
+	"strings"
 	"testing"
 )
 
-var testEncodings = []struct{
-	enc string
+var testEncodings = []struct {
+	enc     string
 	encoded string
 	decoded string
 }{
 	{
-		enc: "binary",
+		enc:     "binary",
 		encoded: "café",
 		decoded: "café",
 	},
 	{
-		enc: "8bit",
+		enc:     "8bit",
 		encoded: "café",
 		decoded: "café",
 	},
 	{
-		enc: "7bit",
+		enc:     "7bit",
 		encoded: "hi there",
 		decoded: "hi there",
 	},
 	{
-		enc: "quoted-printable",
+		enc:     "quoted-printable",
 		encoded: "caf=C3=A9",
 		decoded: "café",
 	},
 	{
-		enc: "base64",
+		enc:     "base64",
 		encoded: "Y2Fmw6k=",
 		decoded: "café",
 	},

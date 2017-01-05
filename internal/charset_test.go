@@ -1,14 +1,12 @@
-package message_test
+package internal
 
 import (
 	"bytes"
 	"io/ioutil"
 	"testing"
-
-	"github.com/emersion/go-message"
 )
 
-var testCharsets = []struct{
+var testCharsets = []struct {
 	charset string
 	encoded []byte
 	decoded string
@@ -41,7 +39,7 @@ var testCharsets = []struct{
 
 func TestCharsetReader(t *testing.T) {
 	for _, test := range testCharsets {
-		r, err := message.CharsetReader(test.charset, bytes.NewReader(test.encoded))
+		r, err := CharsetReader(test.charset, bytes.NewReader(test.encoded))
 		if test.decoded == "" {
 			if err == nil {
 				t.Errorf("Expected an error when creating reader for charset %q", test.charset)

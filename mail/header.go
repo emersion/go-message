@@ -4,6 +4,8 @@ import (
 	"net/mail"
 	"net/textproto"
 	"time"
+
+	"github.com/emersion/go-message/internal"
 )
 
 const dateLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
@@ -36,4 +38,15 @@ func (h Header) Date() (time.Time, error) {
 // SetDate formats the Date header field.
 func (h Header) SetDate(t time.Time) {
 	h.Set("Date", t.Format(dateLayout))
+}
+
+// Subject parses the Subject header field.
+func (h Header) Subject() string {
+	s, _ := internal.DecodeHeader(h.Get("Subject"))
+	return s
+}
+
+// SetSubject formats the Subject header field.
+func (h Header) SetSubject(s string) {
+	h.Set("Subject", internal.EncodeHeader(s))
 }

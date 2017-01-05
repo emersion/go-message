@@ -4,7 +4,7 @@ import (
 	"mime"
 	"net/textproto"
 
-	"github.com/emersion/go-message"
+	"github.com/emersion/go-message/internal"
 )
 
 // An AttachmentHeader represents an attachment's header.
@@ -30,22 +30,16 @@ func (h AttachmentHeader) Filename() (string, error) {
 		_, params, err = mime.ParseMediaType(h.Get("Content-Type"))
 		filename = params["name"]
 	}
-
 	if err != nil {
 		return filename, err
 	}
 
-	dec := &mime.WordDecoder{CharsetReader: message.CharsetReader}
-	decoded, err := dec.DecodeHeader(filename)
-	if err == nil {
-		filename = decoded
-	}
-	return filename, err
+	return internal.DecodeHeader(filename)
 }
 
 // SetFilename formats the attachment's filename.
 func (h AttachmentHeader) SetFilename(filename string) {
-	filename = mime.QEncoding.Encode("utf-8", filename)
+	filename = internal.EncodeHeader(filename)
 	dispParams := map[string]string{"filename": filename}
 	h.Set("Content-Disposition", mime.FormatMediaType("attachment", dispParams))
 }
