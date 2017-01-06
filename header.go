@@ -10,7 +10,7 @@ import (
 func parseHeaderWithParams(s string) (f string, params map[string]string, err error) {
 	f, params, err = mime.ParseMediaType(s)
 	if err != nil {
-		return
+		return s, nil, err
 	}
 	for k, v := range params {
 		params[k], _ = internal.DecodeHeader(v)
