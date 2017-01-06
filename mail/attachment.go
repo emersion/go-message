@@ -1,10 +1,7 @@
 package mail
 
 import (
-	"mime"
-
 	"github.com/emersion/go-message"
-	"github.com/emersion/go-message/internal"
 )
 
 // An AttachmentHeader represents an attachment's header.
@@ -22,24 +19,20 @@ func NewAttachmentHeader() AttachmentHeader {
 
 // Filename parses the attachment's filename.
 func (h AttachmentHeader) Filename() (string, error) {
-	_, params, err := mime.ParseMediaType(h.Get("Content-Disposition"))
+	_, params, err := h.ContentDisposition()
 
 	filename, ok := params["filename"]
 	if !ok {
 		// Using "name" in Content-Type is discouraged
-		_, params, err = mime.ParseMediaType(h.Get("Content-Type"))
+		_, params, err = h.ContentType()
 		filename = params["name"]
 	}
-	if err != nil {
-		return filename, err
-	}
 
-	return internal.DecodeHeader(filename)
+	return filename, err
 }
 
 // SetFilename formats the attachment's filename.
 func (h AttachmentHeader) SetFilename(filename string) {
-	filename = internal.EncodeHeader(filename)
 	dispParams := map[string]string{"filename": filename}
-	h.Set("Content-Disposition", mime.FormatMediaType("attachment", dispParams))
+	h.SetContentDisposition("attachment", dispParams)
 }

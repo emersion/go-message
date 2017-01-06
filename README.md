@@ -9,6 +9,7 @@
 A Go library for the Internet Message Format. It implements:
 * [RFC 5322](https://tools.ietf.org/html/rfc5322): Internet Message Format
 * [RFC 2045](https://tools.ietf.org/html/rfc2045), [RFC 2046](https://tools.ietf.org/html/rfc2046) and [RFC 2047](https://tools.ietf.org/html/rfc2047): Multipurpose Internet Mail Extensions
+* [RFC 2183](https://tools.ietf.org/html/rfc2183): Content-Disposition Header Field
 
 ## Features
 
