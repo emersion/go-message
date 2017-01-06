@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"mime/multipart"
 	"net/textproto"
 	"sort"
@@ -12,7 +11,7 @@ import (
 )
 
 // From https://golang.org/src/mime/multipart/writer.go?s=2140:2215#L76
-func writeHeader(w io.Writer, header textproto.MIMEHeader) error {
+func writeHeader(w io.Writer, header Header) error {
 	keys := make([]string, 0, len(header))
 	for k := range header {
 		keys = append(keys, k)
@@ -38,10 +37,10 @@ type Writer struct {
 
 // newWriter creates a new Writer writing to w with the provided header. Nothing
 // is written to w when it is called. header is modified in-place.
-func newWriter(w io.Writer, header textproto.MIMEHeader) *Writer {
+func newWriter(w io.Writer, header Header) *Writer {
 	ww := &Writer{w: w}
 
-	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
+	mediaType, mediaParams, _ := header.ContentType()
 	if strings.HasPrefix(mediaType, "multipart/") {
 		ww.mw = multipart.NewWriter(ww.w)
 		ww.c = ww.mw
@@ -50,12 +49,12 @@ func newWriter(w io.Writer, header textproto.MIMEHeader) *Writer {
 			ww.mw.SetBoundary(mediaParams["boundary"])
 		} else {
 			mediaParams["boundary"] = ww.mw.Boundary()
-			header.Set("Content-Type", mime.FormatMediaType(mediaType, mediaParams))
+			header.SetContentType(mediaType, mediaParams)
 		}
 
 		header.Del("Content-Transfer-Encoding")
 	} else {
-		wc := encode(header.Get("Content-Transfer-Encoding"), ww.w)
+		wc := encodingWriter(header.Get("Content-Transfer-Encoding"), ww.w)
 		ww.w = wc
 		ww.c = wc
 	}
@@ -65,7 +64,7 @@ func newWriter(w io.Writer, header textproto.MIMEHeader) *Writer {
 
 // CreateWriter creates a new Writer writing to w. If header contains an
 // encoding, data written to the Writer will automatically be encoded with it.
-func CreateWriter(w io.Writer, header textproto.MIMEHeader) (*Writer, error) {
+func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	ww := newWriter(w, header)
 	if err := writeHeader(w, header); err != nil {
 		return nil, err
@@ -86,7 +85,7 @@ func (w *Writer) Close() error {
 // CreatePart returns a Writer to a new part in this multipart entity. If this
 // entity is not multipart, it fails. The body of the part should be written to
 // the returned io.WriteCloser.
-func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
+func (w *Writer) CreatePart(header Header) (*Writer, error) {
 	if w.mw == nil {
 		return nil, errors.New("messages: cannot create a part in a non-multipart message")
 	}
@@ -95,7 +94,7 @@ func (w *Writer) CreatePart(header textproto.MIMEHeader) (*Writer, error) {
 
 	ww := &struct{ io.Writer }{nil}
 	cw := newWriter(ww, header)
-	pw, err := w.mw.CreatePart(header)
+	pw, err := w.mw.CreatePart(textproto.MIMEHeader(header))
 	if err != nil {
 		return nil, err
 	}

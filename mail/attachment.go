@@ -2,19 +2,19 @@ package mail
 
 import (
 	"mime"
-	"net/textproto"
 
+	"github.com/emersion/go-message"
 	"github.com/emersion/go-message/internal"
 )
 
 // An AttachmentHeader represents an attachment's header.
 type AttachmentHeader struct {
-	textproto.MIMEHeader
+	message.Header
 }
 
 // NewAttachmentHeader creates a new AttachmentHeader.
 func NewAttachmentHeader() AttachmentHeader {
-	h := AttachmentHeader{make(textproto.MIMEHeader)}
+	h := AttachmentHeader{make(message.Header)}
 	h.Set("Content-Disposition", "attachment")
 	h.Set("Content-Transfer-Encoding", "base64")
 	return h

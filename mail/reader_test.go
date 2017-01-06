@@ -64,7 +64,7 @@ func testReader(t *testing.T, r io.Reader) {
 				t.Fatalf("Expected a TextHeader, but got a %T", p.Header)
 			}
 
-			if h.IsHTML() {
+			if mediaType, _, _ := h.ContentType(); mediaType != "text/plain" {
 				t.Errorf("Expected a plaintext part, not an HTML part")
 			}
 

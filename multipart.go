@@ -3,7 +3,6 @@ package message
 import (
 	"io"
 	"mime/multipart"
-	"net/textproto"
 )
 
 // MultipartReader is an iterator over parts in a MIME multipart body.
@@ -25,7 +24,7 @@ func (r *multipartReader) NextPart() (*Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewEntity(p.Header, p), nil
+	return NewEntity(Header(p.Header), p), nil
 }
 
 // Close implements io.Closer.
@@ -34,7 +33,7 @@ func (r *multipartReader) Close() error {
 }
 
 type multipartBody struct {
-	header textproto.MIMEHeader
+	header Header
 	parts  []*Entity
 
 	r *io.PipeReader

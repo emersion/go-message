@@ -2,7 +2,6 @@ package mail
 
 import (
 	"io"
-	"net/textproto"
 
 	"github.com/emersion/go-message"
 )
@@ -17,7 +16,7 @@ type Writer struct {
 func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	header.Set("Content-Type", "multipart/mixed")
 
-	mw, err := message.CreateWriter(w, header.MIMEHeader)
+	mw, err := message.CreateWriter(w, header.Header)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +26,7 @@ func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 
 // CreateText creates a TextWriter.
 func (w *Writer) CreateText() (*TextWriter, error) {
-	h := make(textproto.MIMEHeader)
+	h := make(message.Header)
 	h.Set("Content-Type", "multipart/alternative")
 
 	mw, err := w.mw.CreatePart(h)
@@ -40,7 +39,7 @@ func (w *Writer) CreateText() (*TextWriter, error) {
 // CreateAttachment creates a new attachment with the provided header. The body
 // of the part should be written to the returned io.WriteCloser.
 func (w *Writer) CreateAttachment(header AttachmentHeader) (io.WriteCloser, error) {
-	return w.mw.CreatePart(header.MIMEHeader)
+	return w.mw.CreatePart(header.Header)
 }
 
 // Close finishes the Writer.
@@ -56,7 +55,7 @@ type TextWriter struct {
 // CreatePart creates a new text part with the provided header. The body of the
 // part should be written to the returned io.WriteCloser.
 func (w *TextWriter) CreatePart(header TextHeader) (io.WriteCloser, error) {
-	return w.mw.CreatePart(header.MIMEHeader)
+	return w.mw.CreatePart(header.Header)
 }
 
 // Close finishes the TextWriter.

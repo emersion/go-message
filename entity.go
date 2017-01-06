@@ -14,8 +14,8 @@ import (
 // An Entity is either a message or a one of the parts in the body of a
 // multipart entity.
 type Entity struct {
-	Header textproto.MIMEHeader // The entity's header.
-	Body   io.Reader            // The entity's body.
+	Header Header    // The entity's header.
+	Body   io.Reader // The entity's body.
 
 	mediaType   string
 	mediaParams map[string]string
@@ -23,8 +23,8 @@ type Entity struct {
 
 // NewEntity makes a new Entity with the provided header and body. The entity's
 // encoding and charset are automatically decoded to UTF-8.
-func NewEntity(header textproto.MIMEHeader, body io.Reader) *Entity {
-	body = decode(header.Get("Content-Transfer-Encoding"), body)
+func NewEntity(header Header, body io.Reader) *Entity {
+	body = encodingReader(header.Get("Content-Transfer-Encoding"), body)
 	header.Del("Content-Transfer-Encoding")
 
 	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
@@ -47,7 +47,7 @@ func NewEntity(header textproto.MIMEHeader, body io.Reader) *Entity {
 
 // NewMultipart makes a new multipart Entity with the provided header and parts.
 // The Content-Type header must begin with "multipart/".
-func NewMultipart(header textproto.MIMEHeader, parts []*Entity) *Entity {
+func NewMultipart(header Header, parts []*Entity) *Entity {
 	r := &multipartBody{
 		header: header,
 		parts:  parts,
@@ -65,7 +65,7 @@ func Read(r io.Reader) (*Entity, error) {
 		return nil, err
 	}
 
-	return NewEntity(h, br), nil
+	return NewEntity(Header(h), br), nil
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's

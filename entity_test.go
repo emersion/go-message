@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"net/textproto"
 	"strings"
 	"testing"
 )
 
 func testMakeEntity() *Entity {
-	h := make(textproto.MIMEHeader)
+	h := make(Header)
 	h.Set("Content-Type", "text/plain; charset=US-ASCII")
 	h.Set("Content-Transfer-Encoding", "base64")
 
@@ -38,17 +37,17 @@ func TestNewEntity(t *testing.T) {
 }
 
 func testMakeMultipart() *Entity {
-	h1 := make(textproto.MIMEHeader)
+	h1 := make(Header)
 	h1.Set("Content-Type", "text/plain")
 	r1 := strings.NewReader("Text part")
 	e1 := NewEntity(h1, r1)
 
-	h2 := make(textproto.MIMEHeader)
+	h2 := make(Header)
 	h2.Set("Content-Type", "text/html")
 	r2 := strings.NewReader("<p>HTML part</p>")
 	e2 := NewEntity(h2, r2)
 
-	h := make(textproto.MIMEHeader)
+	h := make(Header)
 	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
 	return NewMultipart(h, []*Entity{e1, e2})
 }

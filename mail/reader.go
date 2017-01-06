@@ -4,7 +4,6 @@ import (
 	"container/list"
 	"io"
 	"mime"
-	"net/textproto"
 	"strings"
 
 	"github.com/emersion/go-message"
@@ -45,7 +44,7 @@ func NewReader(e *message.Entity) *Reader {
 	mr := e.MultipartReader()
 	if mr == nil {
 		// Artificially create a multipart entity
-		h := make(textproto.MIMEHeader)
+		h := make(message.Header)
 		h.Set("Content-Type", "multipart/mixed")
 		mr = message.NewMultipart(h, []*message.Entity{e}).MultipartReader()
 	}

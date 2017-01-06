@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"log"
-	"net/textproto"
 	"strings"
 
 	"github.com/emersion/go-message"
@@ -30,23 +29,27 @@ func ExampleRead() {
 				log.Fatal(err)
 			}
 
-			log.Println("A part with type", p.Header.Get("Content-Type"))
+			t, _, _ := p.Header.ContentType()
+			log.Println("A part with type", t)
 		}
 	} else {
-		log.Println("This is a non-multipart message with type", m.Header.Get("Content-Type"))
+		t, _, _ := m.Header.ContentType()
+		log.Println("This is a non-multipart message with type", t)
 	}
 }
 
 func ExampleWriter() {
 	var b bytes.Buffer
 
-	h := textproto.MIMEHeader{"Content-Type": {"multipart/alternative"}}
+	h := make(message.Header)
+	h.SetContentType("multipart/alternative", nil)
 	w, err := message.CreateWriter(&b, h)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	h1 := textproto.MIMEHeader{"Content-Type": {"text/html"}}
+	h1 := make(message.Header)
+	h1.SetContentType("text/html", nil)
 	w1, err := w.CreatePart(h1)
 	if err != nil {
 		log.Fatal(err)
@@ -54,7 +57,8 @@ func ExampleWriter() {
 	io.WriteString(w1, "<h1>Hello World!</h1><p>This is an HTML part.</p>")
 	w1.Close()
 
-	h2 := textproto.MIMEHeader{"Content-Type": {"text/plain"}}
+	h2 := make(message.Header)
+	h1.SetContentType("text/plain", nil)
 	w2, err := w.CreatePart(h2)
 	if err != nil {
 		log.Fatal(err)
