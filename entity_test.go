@@ -21,13 +21,6 @@ func testMakeEntity() *Entity {
 func TestNewEntity(t *testing.T) {
 	e := testMakeEntity()
 
-	if e.Header.Get("Content-Transfer-Encoding") != "" {
-		t.Error("Expected Content-Transfer-Encoding to be unset")
-	}
-	if e.Header.Get("Content-Type") != "text/plain; charset=utf-8" {
-		t.Errorf("Expected Content-Type charset to be utf-8, got %s", e.Header.Get("Content-Type"))
-	}
-
 	expected := "cc sava"
 	if b, err := ioutil.ReadAll(e.Body); err != nil {
 		t.Error("Expected no error while reading entity body, got", err)
@@ -136,6 +129,9 @@ func TestRead_multipart(t *testing.T) {
 
 func TestEntity_WriteTo(t *testing.T) {
 	e := testMakeEntity()
+
+	e.Header.SetContentType("text/plain", map[string]string{"charset": "utf-8"})
+	e.Header.Del("Content-Transfer-Encoding")
 
 	var b bytes.Buffer
 	if err := e.WriteTo(&b); err != nil {

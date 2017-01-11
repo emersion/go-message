@@ -3,7 +3,6 @@ package message
 import (
 	"bufio"
 	"io"
-	"mime"
 	"mime/multipart"
 	"net/textproto"
 	"strings"
@@ -15,7 +14,7 @@ import (
 // multipart entity.
 type Entity struct {
 	Header Header    // The entity's header.
-	Body   io.Reader // The entity's body.
+	Body   io.Reader // The decoded entity's body.
 
 	mediaType   string
 	mediaParams map[string]string
@@ -25,16 +24,12 @@ type Entity struct {
 // encoding and charset are automatically decoded to UTF-8.
 func NewEntity(header Header, body io.Reader) *Entity {
 	body = encodingReader(header.Get("Content-Transfer-Encoding"), body)
-	header.Del("Content-Transfer-Encoding")
 
-	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
+	mediaType, mediaParams, _ := header.ContentType()
 	if ch, ok := mediaParams["charset"]; ok {
 		if converted, err := charset.Reader(ch, body); err == nil {
 			body = converted
 		}
-
-		mediaParams["charset"] = "utf-8"
-		header.Set("Content-Type", mime.FormatMediaType(mediaType, mediaParams))
 	}
 
 	return &Entity{
