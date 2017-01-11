@@ -1,4 +1,4 @@
-package internal
+package charset
 
 import (
 	"bytes"
@@ -39,7 +39,7 @@ var testCharsets = []struct {
 
 func TestCharsetReader(t *testing.T) {
 	for _, test := range testCharsets {
-		r, err := CharsetReader(test.charset, bytes.NewReader(test.encoded))
+		r, err := Reader(test.charset, bytes.NewReader(test.encoded))
 		if test.decoded == "" {
 			if err == nil {
 				t.Errorf("Expected an error when creating reader for charset %q", test.charset)

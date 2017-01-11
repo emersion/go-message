@@ -8,7 +8,7 @@ import (
 	"net/textproto"
 	"strings"
 
-	"github.com/emersion/go-message/internal"
+	"github.com/emersion/go-message/charset"
 )
 
 // An Entity is either a message or a one of the parts in the body of a
@@ -28,8 +28,8 @@ func NewEntity(header Header, body io.Reader) *Entity {
 	header.Del("Content-Transfer-Encoding")
 
 	mediaType, mediaParams, _ := mime.ParseMediaType(header.Get("Content-Type"))
-	if charset, ok := mediaParams["charset"]; ok {
-		if converted, err := internal.CharsetReader(charset, body); err == nil {
+	if ch, ok := mediaParams["charset"]; ok {
+		if converted, err := charset.Reader(ch, body); err == nil {
 			body = converted
 		}
 

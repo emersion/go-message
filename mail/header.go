@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/emersion/go-message"
-	"github.com/emersion/go-message/internal"
+	"github.com/emersion/go-message/charset"
 )
 
 const dateLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
@@ -43,10 +43,10 @@ func (h Header) SetDate(t time.Time) {
 // Subject parses the Subject header field. If there is an error, the raw field
 // value is returned alongside the error.
 func (h Header) Subject() (string, error) {
-	return internal.DecodeHeader(h.Get("Subject"))
+	return charset.DecodeHeader(h.Get("Subject"))
 }
 
 // SetSubject formats the Subject header field.
 func (h Header) SetSubject(s string) {
-	h.Set("Subject", internal.EncodeHeader(s))
+	h.Set("Subject", charset.EncodeHeader(s))
 }

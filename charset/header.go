@@ -1,10 +1,10 @@
-package internal
+package charset
 
 import (
 	"mime"
 )
 
-var wordDecoder = &mime.WordDecoder{CharsetReader: CharsetReader}
+var wordDecoder = &mime.WordDecoder{CharsetReader: Reader}
 
 // DecodeHeader decodes an internationalized header field. If it fails, it
 // returns the input string and the error.

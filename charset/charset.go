@@ -1,4 +1,5 @@
-package internal
+// Package charset provides functions to decode and encode charsets.
+package charset
 
 import (
 	"fmt"
@@ -32,9 +33,8 @@ var charsets = map[string]encoding.Encoding{
 	"windows-1252": charmap.Windows1252,
 }
 
-// CharsetReader returns an io.Reader that converts the provided charset to
-// UTF-8.
-func CharsetReader(charset string, input io.Reader) (io.Reader, error) {
+// Reader returns an io.Reader that converts the provided charset to UTF-8.
+func Reader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
 	if charset == "utf-8" || charset == "us-ascii" {
 		return input, nil

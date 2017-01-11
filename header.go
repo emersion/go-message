@@ -4,7 +4,7 @@ import (
 	"mime"
 	"net/textproto"
 
-	"github.com/emersion/go-message/internal"
+	"github.com/emersion/go-message/charset"
 )
 
 func parseHeaderWithParams(s string) (f string, params map[string]string, err error) {
@@ -13,7 +13,7 @@ func parseHeaderWithParams(s string) (f string, params map[string]string, err er
 		return s, nil, err
 	}
 	for k, v := range params {
-		params[k], _ = internal.DecodeHeader(v)
+		params[k], _ = charset.DecodeHeader(v)
 	}
 	return
 }
@@ -21,7 +21,7 @@ func parseHeaderWithParams(s string) (f string, params map[string]string, err er
 func formatHeaderWithParams(f string, params map[string]string) string {
 	encParams := make(map[string]string)
 	for k, v := range params {
-		encParams[k] = internal.EncodeHeader(v)
+		encParams[k] = charset.EncodeHeader(v)
 	}
 	return mime.FormatMediaType(f, encParams)
 }
@@ -64,12 +64,12 @@ func (h Header) SetContentType(t string, params map[string]string) {
 
 // ContentDescription parses the Content-Description header field.
 func (h Header) ContentDescription() (string, error) {
-	return internal.DecodeHeader(h.Get("Content-Description"))
+	return charset.DecodeHeader(h.Get("Content-Description"))
 }
 
 // SetContentDescription parses the Content-Description header field.
 func (h Header) SetContentDescription(desc string) {
-	h.Set("Content-Description", internal.EncodeHeader(desc))
+	h.Set("Content-Description", charset.EncodeHeader(desc))
 }
 
 // ContentDisposition parses the Content-Disposition header field, as defined in
