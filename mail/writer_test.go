@@ -65,19 +65,19 @@ func TestWriter(t *testing.T) {
 	h := mail.NewHeader()
 	mw, err := mail.CreateWriter(&b, h)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	// Create a text part
 	tw, err := mw.CreateText()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	th := mail.NewTextHeader()
 	th.Set("Content-Type", "text/plain")
 	w, err := tw.CreatePart(th)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	io.WriteString(w, "Who are you?")
 	w.Close()
@@ -89,7 +89,42 @@ func TestWriter(t *testing.T) {
 	ah.SetFilename("note.txt")
 	w, err = mw.CreateAttachment(ah)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
+	}
+	io.WriteString(w, "I'm Mitsuha.")
+	w.Close()
+
+	mw.Close()
+
+	testReader(t, &b)
+}
+
+func TestWriter_singleText(t *testing.T) {
+	var b bytes.Buffer
+
+	h := mail.NewHeader()
+	mw, err := mail.CreateWriter(&b, h)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a text part
+	th := mail.NewTextHeader()
+	th.Set("Content-Type", "text/plain")
+	w, err := mw.CreateSingleText(th)
+	if err != nil {
+		t.Fatal(err)
+	}
+	io.WriteString(w, "Who are you?")
+	w.Close()
+
+	// Create an attachment
+	ah := mail.NewAttachmentHeader()
+	ah.Set("Content-Type", "text/plain")
+	ah.SetFilename("note.txt")
+	w, err = mw.CreateAttachment(ah)
+	if err != nil {
+		t.Fatal(err)
 	}
 	io.WriteString(w, "I'm Mitsuha.")
 	w.Close()

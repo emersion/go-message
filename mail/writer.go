@@ -24,7 +24,8 @@ func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	return &Writer{mw}, nil
 }
 
-// CreateText creates a TextWriter.
+// CreateText creates a TextWriter. One or more parts representing the same text
+// in different formats can be written to a TextWriter.
 func (w *Writer) CreateText() (*TextWriter, error) {
 	h := make(message.Header)
 	h.Set("Content-Type", "multipart/alternative")
@@ -34,6 +35,13 @@ func (w *Writer) CreateText() (*TextWriter, error) {
 		return nil, err
 	}
 	return &TextWriter{mw}, nil
+}
+
+// CreatePart creates a new single text part with the provided header. The body
+// of the part should be written to the returned io.WriteCloser. Only one single
+// text part should be written, use CreateText if you want multiple text parts.
+func (w *Writer) CreateSingleText(header TextHeader) (io.WriteCloser, error) {
+	return w.mw.CreatePart(header.Header)
 }
 
 // CreateAttachment creates a new attachment with the provided header. The body
