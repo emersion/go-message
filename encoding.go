@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io"
 	"mime/quotedprintable"
 	"strings"
@@ -9,14 +10,19 @@ import (
 	"github.com/emersion/go-textwrapper"
 )
 
-func encodingReader(enc string, r io.Reader) io.Reader {
+func encodingReader(enc string, r io.Reader) (io.Reader, error) {
+	var dec io.Reader
 	switch strings.ToLower(enc) {
 	case "quoted-printable":
-		r = quotedprintable.NewReader(r)
+		dec = quotedprintable.NewReader(r)
 	case "base64":
-		r = base64.NewDecoder(base64.StdEncoding, r)
+		dec = base64.NewDecoder(base64.StdEncoding, r)
+	case "7bit", "8bit", "binary", "":
+		dec = r
+	default:
+		return nil, fmt.Errorf("unhandled encoding %q", enc)
 	}
-	return r
+	return dec, nil
 }
 
 type nopCloser struct {

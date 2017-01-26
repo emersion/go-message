@@ -42,12 +42,21 @@ var testEncodings = []struct {
 
 func TestDecode(t *testing.T) {
 	for _, test := range testEncodings {
-		r := encodingReader(test.enc, strings.NewReader(test.encoded))
-		if b, err := ioutil.ReadAll(r); err != nil {
+		r, err := encodingReader(test.enc, strings.NewReader(test.encoded))
+		if err != nil {
+			t.Errorf("Expected no error when creating decoder for encoding %q, but got: %v", test.enc, err)
+		} else if b, err := ioutil.ReadAll(r); err != nil {
 			t.Errorf("Expected no error when reading encoding %q, but got: %v", test.enc, err)
 		} else if s := string(b); s != test.decoded {
 			t.Errorf("Expected decoded text to be %q but got %q", test.decoded, s)
 		}
+	}
+}
+
+func TestDecode_error(t *testing.T) {
+	_, err := encodingReader("idontexist", nil)
+	if err == nil {
+		t.Errorf("Expected an error when creating decoder for invalid encoding")
 	}
 }
 

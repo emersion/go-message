@@ -23,7 +23,10 @@ type Entity struct {
 // NewEntity makes a new Entity with the provided header and body. The entity's
 // encoding and charset are automatically decoded to UTF-8.
 func NewEntity(header Header, body io.Reader) *Entity {
-	body = encodingReader(header.Get("Content-Transfer-Encoding"), body)
+	enc := header.Get("Content-Transfer-Encoding")
+	if decoded, err := encodingReader(enc, body); err == nil {
+		body = decoded
+	}
 
 	mediaType, mediaParams, _ := header.ContentType()
 	if ch, ok := mediaParams["charset"]; ok {
