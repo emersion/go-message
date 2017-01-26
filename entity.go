@@ -20,9 +20,9 @@ type Entity struct {
 	mediaParams map[string]string
 }
 
-// NewEntity makes a new Entity with the provided header and body. The entity's
+// New makes a new message with the provided header and body. The entity's
 // encoding and charset are automatically decoded to UTF-8.
-func NewEntity(header Header, body io.Reader) *Entity {
+func New(header Header, body io.Reader) *Entity {
 	enc := header.Get("Content-Transfer-Encoding")
 	if decoded, err := encodingReader(enc, body); err == nil {
 		body = decoded
@@ -51,7 +51,7 @@ func NewMultipart(header Header, parts []*Entity) *Entity {
 		parts:  parts,
 	}
 
-	return NewEntity(header, r)
+	return New(header, r)
 }
 
 // Read reads a message from r. The message's encoding and charset are
@@ -63,7 +63,7 @@ func Read(r io.Reader) (*Entity, error) {
 		return nil, err
 	}
 
-	return NewEntity(Header(h), br), nil
+	return New(Header(h), br), nil
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's
