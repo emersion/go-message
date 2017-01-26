@@ -43,8 +43,8 @@ func New(header Header, body io.Reader) *Entity {
 	}
 }
 
-// NewMultipart makes a new multipart Entity with the provided header and parts.
-// The Content-Type header must begin with "multipart/".
+// NewMultipart makes a new multipart message with the provided header and
+// parts. The Content-Type header must begin with "multipart/".
 func NewMultipart(header Header, parts []*Entity) *Entity {
 	r := &multipartBody{
 		header: header,
