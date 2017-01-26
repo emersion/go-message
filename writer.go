@@ -94,7 +94,7 @@ func (w *Writer) Close() error {
 // the returned io.WriteCloser.
 func (w *Writer) CreatePart(header Header) (*Writer, error) {
 	if w.mw == nil {
-		return nil, errors.New("messages: cannot create a part in a non-multipart message")
+		return nil, errors.New("cannot create a part in a non-multipart message")
 	}
 
 	if w.c == nil {
