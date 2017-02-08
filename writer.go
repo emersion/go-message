@@ -2,7 +2,6 @@ package message
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/textproto"
@@ -19,12 +18,12 @@ func writeHeader(w io.Writer, header Header) error {
 	sort.Strings(keys)
 	for _, k := range keys {
 		for _, v := range header[k] {
-			if _, err := fmt.Fprintf(w, "%s: %s\r\n", k, v); err != nil {
+			if _, err := io.WriteString(w, formatHeaderField(k, v)); err != nil {
 				return err
 			}
 		}
 	}
-	_, err := fmt.Fprintf(w, "\r\n")
+	_, err := io.WriteString(w, "\r\n")
 	return err
 }
 
