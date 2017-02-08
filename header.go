@@ -30,8 +30,9 @@ func formatHeaderWithParams(f string, params map[string]string) string {
 }
 
 // formatHeaderField formats a header field, ensuring each line is no longer
-// than 76 characters. If the header contains a word longer than this limit, it
-// will be split.
+// than 76 characters. It tries to fold lines at whitespace characters if
+// possible. If the header contains a word longer than this limit, it will be
+// split.
 func formatHeaderField(k, v string) string {
 	s := k + ": "
 
