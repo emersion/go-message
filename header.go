@@ -36,12 +36,12 @@ func formatHeaderWithParams(f string, params map[string]string) string {
 func formatHeaderField(k, v string) string {
 	s := k + ": "
 
-	first := true
+	// first := true
 	for len(v) > 0 {
 		maxlen := maxHeaderLen
-		if first {
-			// maxlen -= len(s)
-		}
+		// if first {
+		// 	// maxlen -= len(s)
+		// }
 
 		// We'll need to fold before i
 		foldBefore := maxlen + 1
@@ -79,7 +79,7 @@ func formatHeaderField(k, v string) string {
 
 		s += v[:foldAt] + folding
 		v = v[foldAt:]
-		first = false
+		// first = false
 	}
 
 	return s
