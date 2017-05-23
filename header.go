@@ -40,7 +40,7 @@ func formatHeaderField(k, v string) string {
 	for len(v) > 0 {
 		maxlen := maxHeaderLen
 		if first {
-			maxlen -= len(s)
+			// maxlen -= len(s)
 		}
 
 		// We'll need to fold before i
