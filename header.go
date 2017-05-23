@@ -92,13 +92,13 @@ type Header map[string][]string
 // associated with key.
 func (h Header) Add(key, value string) {
 	// textproto.MIMEHeader(h).Add(key, value)
-	h[CanonicalMIMEHeaderKey(key)] = []string{value}
+	h[key] = []string{value}
 }
 
 // Set sets the header entries associated with key to the single element value.
 // It replaces any existing values associated with key.
 func (h Header) Set(key, value string) {
-	h[CanonicalMIMEHeaderKey(key)] = []string{value}
+	h[key] = []string{value}
 }
 
 // Get gets the first value associated with the given key. If there are no
