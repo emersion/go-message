@@ -16,7 +16,7 @@ import (
 var charsets = map[string]encoding.Encoding{
 	"big5":         traditionalchinese.Big5,
 	"euc-jp":       japanese.EUCJP,
-	"gb2312":       simplifiedchinese.HZGB2312,
+	"gb2312":       simplifiedchinese.GBK,
 	"iso-2022-jp":  japanese.ISO2022JP,
 	"iso-8859-1":   charmap.ISO8859_1,
 	"iso-8859-2":   charmap.ISO8859_2,
