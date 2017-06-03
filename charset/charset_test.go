@@ -35,6 +35,11 @@ var testCharsets = []struct {
 		charset: "idontexist",
 		encoded: []byte{42},
 	},
+	{
+		charset: "gb2312",
+		encoded: []byte{178, 226, 202, 212},
+		decoded: "测试",
+	},
 }
 
 func TestCharsetReader(t *testing.T) {
