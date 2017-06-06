@@ -28,6 +28,7 @@ var charsets = map[string]encoding.Encoding{
 	"iso-8859-15":  charmap.ISO8859_15,
 	"iso-8859-16":  charmap.ISO8859_16,
 	"koi8-r":       charmap.KOI8R,
+	"koi8-u":       charmap.KOI8U,
 	"shift_jis":    japanese.ShiftJIS,
 	"windows-1251": charmap.Windows1251,
 	"windows-1252": charmap.Windows1252,

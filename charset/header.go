@@ -18,5 +18,5 @@ func DecodeHeader(s string) (string, error) {
 
 // EncodeHeader encodes an internationalized header field.
 func EncodeHeader(s string) string {
-	return mime.QEncoding.Encode("utf-8", s)
+	return mime.BEncoding.Encode("utf-8", s)
 }
