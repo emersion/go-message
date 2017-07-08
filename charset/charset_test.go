@@ -22,6 +22,11 @@ var testCharsets = []struct {
 		decoded: "café",
 	},
 	{
+		charset: "windows-1250",
+		encoded: []byte{0x8c, 0x8d, 0x8f, 0x9c, 0x9d, 0x9f, 0xbc, 0xbe},
+		decoded: "ŚŤŹśťźĽľ",
+	},
+	{
 		charset: "windows-1252",
 		encoded: []byte{0x63, 0x61, 0x66, 0xE9, 0x20, 0x80},
 		decoded: "café €",
