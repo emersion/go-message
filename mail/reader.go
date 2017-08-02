@@ -58,13 +58,17 @@ func NewReader(e *message.Entity) *Reader {
 }
 
 // CreateReader reads a mail header from r and returns a new mail reader.
+//
+// If the message uses an unknown transfer encoding or charset, CreateReader
+// returns an error that verifies IsUnknownEncoding, but also returns a Reader
+// that can be used.
 func CreateReader(r io.Reader) (*Reader, error) {
 	e, err := message.Read(r)
-	if err != nil {
+	if err != nil && !message.IsUnknownEncoding(err) {
 		return nil, err
 	}
 
-	return NewReader(e), nil
+	return NewReader(e), err
 }
 
 // NextPart returns the next mail part. If there is no more part, io.EOF is
