@@ -15,7 +15,8 @@ func testMakeEntity() *Entity {
 
 	r := strings.NewReader("Y2Mgc2F2YQ==")
 
-	return New(h, r)
+	e, _ := New(h, r)
+	return e
 }
 
 func TestNewEntity(t *testing.T) {
@@ -33,16 +34,17 @@ func testMakeMultipart() *Entity {
 	h1 := make(Header)
 	h1.Set("Content-Type", "text/plain")
 	r1 := strings.NewReader("Text part")
-	e1 := New(h1, r1)
+	e1, _ := New(h1, r1)
 
 	h2 := make(Header)
 	h2.Set("Content-Type", "text/html")
 	r2 := strings.NewReader("<p>HTML part</p>")
-	e2 := New(h2, r2)
+	e2, _ := New(h2, r2)
 
 	h := make(Header)
 	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
-	return NewMultipart(h, []*Entity{e1, e2})
+	e, _ := NewMultipart(h, []*Entity{e1, e2})
+	return e
 }
 
 const testMultipartHeader = "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +

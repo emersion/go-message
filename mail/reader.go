@@ -44,9 +44,11 @@ func NewReader(e *message.Entity) *Reader {
 	mr := e.MultipartReader()
 	if mr == nil {
 		// Artificially create a multipart entity
+		// With this header, no error will be returned by message.NewMultipart
 		h := make(message.Header)
 		h.Set("Content-Type", "multipart/mixed")
-		mr = message.NewMultipart(h, []*message.Entity{e}).MultipartReader()
+		me, _ := message.NewMultipart(h, []*message.Entity{e})
+		mr = me.MultipartReader()
 	}
 
 	l := list.New()

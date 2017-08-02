@@ -14,7 +14,10 @@ func ExampleRead() {
 	var r io.Reader
 
 	m, err := message.Read(r)
-	if err != nil {
+	if message.IsUnknownEncoding(err) {
+		// This error is not fatal
+		log.Println("Unknown encoding:", err)
+	} else if err != nil {
 		log.Fatal(err)
 	}
 
@@ -76,7 +79,9 @@ func Example_transform() {
 	var r io.Reader
 
 	m, err := message.Read(r)
-	if err != nil {
+	if message.IsUnknownEncoding(err) {
+		log.Println("Unknown encoding:", err)
+	} else if err != nil {
 		log.Fatal(err)
 	}
 

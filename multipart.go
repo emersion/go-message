@@ -24,7 +24,7 @@ func (r *multipartReader) NextPart() (*Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(Header(p.Header), p), nil
+	return New(Header(p.Header), p)
 }
 
 // Close implements io.Closer.
