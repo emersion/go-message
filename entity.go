@@ -50,7 +50,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 
 	mediaType, mediaParams, _ := header.ContentType()
 	if ch, ok := mediaParams["charset"]; ok {
-		if converted, charsetErr := charset.Reader(ch, body); err != nil {
+		if converted, charsetErr := charset.Reader(ch, body); charsetErr != nil {
 			err = unknownEncodingError{charsetErr}
 		} else {
 			body = converted

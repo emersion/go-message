@@ -161,3 +161,47 @@ func TestEntity_WriteTo_multipart(t *testing.T) {
 		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", testMultipartText, s)
 	}
 }
+
+func TestNew_unknownTransferEncoding(t *testing.T) {
+	h := make(Header)
+	h.Set("Content-Transfer-Encoding", "i-dont-exist")
+
+	expected := "hey there"
+	r := strings.NewReader(expected)
+
+	e, err := New(h, r)
+	if err == nil {
+		t.Fatal("New(unknown transfer encoding): expected an error")
+	}
+	if !IsUnknownEncoding(err) {
+		t.Fatal("New(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
+	}
+
+	if b, err := ioutil.ReadAll(e.Body); err != nil {
+		t.Error("Expected no error while reading entity body, got", err)
+	} else if s := string(b); s != expected {
+		t.Errorf("Expected %q as entity body but got %q", expected, s)
+	}
+}
+
+func TestNew_unknownCharset(t *testing.T) {
+	h := make(Header)
+	h.Set("Content-Type", "text/plain; charset=I-DONT-EXIST")
+
+	expected := "hey there"
+	r := strings.NewReader(expected)
+
+	e, err := New(h, r)
+	if err == nil {
+		t.Fatal("New(unknown charset): expected an error")
+	}
+	if !IsUnknownEncoding(err) {
+		t.Fatal("New(unknown charset): expected an error that verifies IsUnknownEncoding")
+	}
+
+	if b, err := ioutil.ReadAll(e.Body); err != nil {
+		t.Error("Expected no error while reading entity body, got", err)
+	} else if s := string(b); s != expected {
+		t.Errorf("Expected %q as entity body but got %q", expected, s)
+	}
+}
