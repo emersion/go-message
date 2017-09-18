@@ -205,3 +205,11 @@ func TestNew_unknownCharset(t *testing.T) {
 		t.Errorf("Expected %q as entity body but got %q", expected, s)
 	}
 }
+
+func TestNewEntity_MultipartReader_notMultipart(t *testing.T) {
+	e := testMakeEntity()
+	mr := e.MultipartReader()
+	if mr != nil {
+		t.Fatal("(non-multipart).MultipartReader() != nil")
+	}
+}
