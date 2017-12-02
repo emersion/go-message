@@ -74,6 +74,9 @@ func CreateReader(r io.Reader) (*Reader, error) {
 // NextPart returns the next mail part. If there is no more part, io.EOF is
 // returned as error.
 //
+// The returned Part.Body must be read completely before the next call to
+// NextPart, otherwise it will be discarded.
+//
 // If the part uses an unknown transfer encoding or charset, NextPart returns an
 // error that verifies message.IsUnknownEncoding, but also returns a Part that
 // can be used.
