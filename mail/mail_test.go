@@ -1,6 +1,7 @@
 package mail_test
 
-const mailString = "Content-Type: multipart/mixed; boundary=message-boundary\r\n" +
+const mailString = "Subject: Your Name\r\n" +
+	"Content-Type: multipart/mixed; boundary=message-boundary\r\n" +
 	"\r\n" +
 	"--message-boundary\r\n" +
 	"Content-Type: multipart/alternative; boundary=text-boundary\r\n" +
@@ -17,3 +18,18 @@ const mailString = "Content-Type: multipart/mixed; boundary=message-boundary\r\n
 	"\r\n" +
 	"I'm Mitsuha.\r\n" +
 	"--message-boundary--\r\n"
+
+const nestedMailString = "Subject: Fwd: Your Name\r\n" +
+	"Content-Type: multipart/mixed; boundary=outer-message-boundary\r\n" +
+	"\r\n" +
+	"--outer-message-boundary\r\n" +
+	"Content-Type: text/plain\r\n" +
+	"Content-Disposition: inline\r\n" +
+	"\r\n" +
+	"I forgot.\r\n" +
+	"--outer-message-boundary\r\n" +
+	"Content-Type: message/rfc822\r\n" +
+	"Content-Disposition: attachment; filename=attached-message.eml\r\n" +
+	"\r\n" +
+	mailString +
+	"--outer-message-boundary--\r\n"

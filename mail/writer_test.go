@@ -63,6 +63,7 @@ func TestWriter(t *testing.T) {
 	var b bytes.Buffer
 
 	h := mail.NewHeader()
+	h.SetSubject("Your Name")
 	mw, err := mail.CreateWriter(&b, h)
 	if err != nil {
 		t.Fatal(err)
@@ -103,6 +104,7 @@ func TestWriter_singleText(t *testing.T) {
 	var b bytes.Buffer
 
 	h := mail.NewHeader()
+	h.SetSubject("Your Name")
 	mw, err := mail.CreateWriter(&b, h)
 	if err != nil {
 		t.Fatal(err)

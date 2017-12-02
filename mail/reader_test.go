@@ -43,9 +43,17 @@ func ExampleReader() {
 func testReader(t *testing.T, r io.Reader) {
 	mr, err := mail.CreateReader(r)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatalf("mail.CreateReader(r) = %v", err)
 	}
 	defer mr.Close()
+
+	wantSubject := "Your Name"
+	subject, err := mr.Header.Subject()
+	if err != nil {
+		t.Errorf("mr.Header.Subject() = %v", err)
+	} else if subject != wantSubject {
+		t.Errorf("mr.Header.Subject() = %v, want %v", subject, wantSubject)
+	}
 
 	i := 0
 	for {
@@ -53,7 +61,7 @@ func testReader(t *testing.T, r io.Reader) {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 
 		var expectedBody string
@@ -148,5 +156,49 @@ func TestReader_closeImmediately(t *testing.T) {
 
 	if _, err := mr.NextPart(); err != io.EOF {
 		t.Fatal("Expected io.EOF while reading part, but got:", err)
+	}
+}
+
+func TestReader_nested(t *testing.T) {
+	r := strings.NewReader(nestedMailString)
+
+	mr, err := mail.CreateReader(r)
+	if err != nil {
+		t.Fatalf("mail.CreateReader(r) = %v", err)
+	}
+	defer mr.Close()
+
+	i := 0
+	for {
+		p, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			t.Fatal(err)
+		}
+
+		switch i {
+		case 0:
+			_, ok := p.Header.(mail.TextHeader)
+			if !ok {
+				t.Fatalf("Expected a TextHeader, but got a %T", p.Header)
+			}
+
+			expectedBody := "I forgot."
+			if b, err := ioutil.ReadAll(p.Body); err != nil {
+				t.Error("Expected no error while reading part body, but got:", err)
+			} else if string(b) != expectedBody {
+				t.Errorf("Expected part body to be:\n%v\nbut got:\n%v", expectedBody, string(b))
+			}
+		case 1:
+			_, ok := p.Header.(mail.AttachmentHeader)
+			if !ok {
+				t.Fatalf("Expected an AttachmentHeader, but got a %T", p.Header)
+			}
+
+			testReader(t, p.Body)
+		}
+
+		i++
 	}
 }
