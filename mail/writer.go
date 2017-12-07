@@ -37,9 +37,10 @@ func (w *Writer) CreateText() (*TextWriter, error) {
 	return &TextWriter{mw}, nil
 }
 
-// CreatePart creates a new single text part with the provided header. The body
-// of the part should be written to the returned io.WriteCloser. Only one single
-// text part should be written, use CreateText if you want multiple text parts.
+// CreateSingleText creates a new single text part with the provided header. The
+// body of the part should be written to the returned io.WriteCloser. Only one
+// single text part should be written, use CreateText if you want multiple text
+// parts.
 func (w *Writer) CreateSingleText(header TextHeader) (io.WriteCloser, error) {
 	return w.mw.CreatePart(header.Header)
 }
