@@ -79,3 +79,14 @@ func TestFormatHeaderField(t *testing.T) {
 		}
 	}
 }
+
+func TestEmptyContentType(t *testing.T) {
+	h := make(Header)
+
+	mediaType := "text/plain"
+	if gotMediaType, _, err := h.ContentType(); err != nil {
+		t.Error("Expected no error when parsing empty content type, but got:", err)
+	} else if gotMediaType != mediaType {
+		t.Errorf("Expected media type %q but got %q", mediaType, gotMediaType)
+	}
+}

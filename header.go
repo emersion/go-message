@@ -112,8 +112,14 @@ func (h Header) Del(key string) {
 }
 
 // ContentType parses the Content-Type header field.
+//
+// If no Content-Type is specified, it returns "text/plain".
 func (h Header) ContentType() (t string, params map[string]string, err error) {
-	return parseHeaderWithParams(h.Get("Content-Type"))
+	v := h.Get("Content-Type")
+	if v == "" {
+		return "text/plain", nil, nil
+	}
+	return parseHeaderWithParams(v)
 }
 
 // SetContentType formats the Content-Type header field.
