@@ -111,7 +111,7 @@ func TestReader(t *testing.T) {
 }
 
 func TestReader_nonMultipart(t *testing.T) {
-	s := "Content-Type: text/plain\r\n" +
+	s := "Subject: Your Name\r\n" +
 		"\r\n" +
 		"Who are you?"
 

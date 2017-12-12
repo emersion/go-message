@@ -3,7 +3,6 @@ package mail
 import (
 	"container/list"
 	"io"
-	"mime"
 	"strings"
 
 	"github.com/emersion/go-message"
@@ -100,8 +99,9 @@ func (r *Reader) NextPart() (*Part, error) {
 		} else {
 			// This is a non-multipart part, return a mail part
 			mp := &Part{Body: p.Body}
-			disp, _, _ := mime.ParseMediaType(p.Header.Get("Content-Disposition"))
-			if strings.HasPrefix(p.Header.Get("Content-Type"), "text/") && disp != "attachment" {
+			t, _, _ := p.Header.ContentType()
+			disp, _, _ := p.Header.ContentDisposition()
+			if strings.HasPrefix(t, "text/") && disp != "attachment" {
 				mp.Header = TextHeader{p.Header}
 			} else {
 				mp.Header = AttachmentHeader{p.Header}
