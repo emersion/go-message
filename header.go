@@ -36,6 +36,10 @@ func formatHeaderWithParams(f string, params map[string]string) string {
 func formatHeaderField(k, v string) string {
 	s := k + ": "
 
+	if v == "" {
+		return s + "\r\n"
+	}
+
 	first := true
 	for len(v) > 0 {
 		maxlen := maxHeaderLen
