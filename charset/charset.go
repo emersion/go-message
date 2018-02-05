@@ -24,6 +24,7 @@ var charsets = map[string]encoding.Encoding{
 	"iso-8859-2":   charmap.ISO8859_2,
 	"iso-8859-3":   charmap.ISO8859_3,
 	"iso-8859-4":   charmap.ISO8859_4,
+	"iso-8859-9":   charmap.ISO8859_9,
 	"iso-8859-10":  charmap.ISO8859_10,
 	"iso-8859-13":  charmap.ISO8859_13,
 	"iso-8859-14":  charmap.ISO8859_14,
