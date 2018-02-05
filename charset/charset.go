@@ -48,3 +48,9 @@ func Reader(charset string, input io.Reader) (io.Reader, error) {
 	}
 	return nil, fmt.Errorf("unhandled charset %q", charset)
 }
+
+// RegisterEncoding registers an encoding. This is intended to be called from
+// the init function in packages that want to support additional charsets.
+func RegisterEncoding(name string, enc encoding.Encoding) {
+	charsets[name] = enc
+}
