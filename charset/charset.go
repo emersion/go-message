@@ -17,7 +17,7 @@ var charsets = map[string]encoding.Encoding{
 	"big5":         traditionalchinese.Big5,
 	"euc-jp":       japanese.EUCJP,
 	"gbk":          simplifiedchinese.GBK,
-	"gb2312":       simplifiedchinese.GBK,     // as  GBK is a superset of HZGB2312,so just use GBK
+	"gb2312":       simplifiedchinese.GBK,     // as GBK is a superset of HZGB2312, so just use GBK
 	"gb18030":      simplifiedchinese.GB18030, // GB18030 Use for parse QQ business mail message
 	"iso-2022-jp":  japanese.ISO2022JP,
 	"iso-8859-1":   charmap.ISO8859_1,
@@ -40,7 +40,8 @@ var charsets = map[string]encoding.Encoding{
 // Reader returns an io.Reader that converts the provided charset to UTF-8.
 func Reader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
-	if charset == "utf-8" || charset == "us-ascii" {
+	// "ascii" is not in the spec but is common
+	if charset == "utf-8" || charset == "us-ascii" || charset == "ascii" {
 		return input, nil
 	}
 	if enc, ok := charsets[charset]; ok {
