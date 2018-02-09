@@ -30,6 +30,12 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Expected header address list to be %v, but got %v", from, got)
 	}
 
+	if got, err := h.AddressList("Cc"); err != nil {
+		t.Error("Expected no error while parsing missing header address list, got:", err)
+	} else if got != nil {
+		t.Errorf("Expected missing header address list to be %v, but got %v", nil, got)
+	}
+
 	if got, err := h.Subject(); err != nil {
 		t.Error("Expected no error while parsing header subject, got:", err)
 	} else if got != subject {

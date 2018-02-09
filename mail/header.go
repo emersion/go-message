@@ -20,9 +20,14 @@ func NewHeader() Header {
 	return Header{make(message.Header)}
 }
 
-// AddressList parses the named header field as a list of addresses.
+// AddressList parses the named header field as a list of addresses. If the
+// header is missing, it returns nil.
 func (h Header) AddressList(key string) ([]*Address, error) {
-	return parseAddressList(h.Get(key))
+	v := h.Get(key)
+	if v == "" {
+		return nil, nil
+	}
+	return parseAddressList(v)
 }
 
 // SetAddressList formats the named header to the provided list of addresses.
