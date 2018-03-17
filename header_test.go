@@ -60,6 +60,21 @@ var formatHeaderFieldTests = []struct {
 		formatted: "Subject: This is        yet          \t  another    subject          \t       \r\n            with many         whitespace      characters\r\n",
 	},
 	{
+		k:         "Subject",
+		v:         "=?utf-8?q?=E2=80=9CDeveloper_reads_customer_requested_change.=E2=80=9D=0A?= =?utf-8?q?=0ACaravaggio=0A=0AOil_on...?=",
+		formatted: "Subject: =?utf-8?q?=E2=80=9CDeveloper_reads_customer_requested_change.\r\n =E2=80=9D=0A?= =?utf-8?q?=0ACaravaggio=0A=0AOil_on...?=\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "=?utf-8?q?=E2=80=9CShort subject=E2=80=9D=0A?= =?utf-8?q?=0AAuthor=0A=0AOil_on...?=",
+		formatted: "Subject: =?utf-8?q?=E2=80=9CShort subject=E2=80=9D=0A?= =?utf-8?q?\r\n =0AAuthor=0A=0AOil_on...?=\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "=?utf-8?q?=E2=80=9CVery long subject very long subject very long subject very long subject=E2=80=9D=0A?= =?utf-8?q?=0ALong second part of subject long second part of subject long second part of subject long subject=0A=0AOil_on...?=",
+		formatted: "Subject: =?utf-8?q?=E2=80=9CVery long subject very long subject very long\r\n subject very long subject=E2=80=9D=0A?= =?utf-8?q?=0ALong second part of\r\n subject long second part of subject long second part of subject long\r\n subject=0A=0AOil_on...?=\r\n",
+	},
+	{
 		k:         "DKIM-Signature",
 		v:         "v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
 		formatted: "DKIM-Signature: v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
