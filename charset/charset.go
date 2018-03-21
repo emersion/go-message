@@ -35,6 +35,7 @@ var charsets = map[string]encoding.Encoding{
 	"windows-1250": charmap.Windows1250,
 	"windows-1251": charmap.Windows1251,
 	"windows-1252": charmap.Windows1252,
+	"ansi_x3.110-1983": charmap.ISO8859_1,
 }
 
 // Reader returns an io.Reader that converts the provided charset to UTF-8.
