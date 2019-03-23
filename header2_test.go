@@ -24,7 +24,7 @@ func newTestHeader() Header2 {
 func collectHeaderFields(fields HeaderFields) []string {
 	var l []string
 	for fields.Next() {
-		l = append(l, fields.Key() + ": " + fields.Value())
+		l = append(l, fields.Key()+": "+fields.Value())
 	}
 	return l
 }
@@ -142,9 +142,9 @@ func TestHeader2_FieldsByKey_Del(t *testing.T) {
 }
 
 const testHeader = "Received: from example.com by example.org\r\n" +
-"Received: from localhost by example.com\r\n" +
-"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
-"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
+	"Received: from localhost by example.com\r\n" +
+	"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
+	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
 
 func TestReadHeader(t *testing.T) {
 	h, err := readHeader(bufio.NewReader(strings.NewReader(testHeader)))

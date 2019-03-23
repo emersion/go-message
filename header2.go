@@ -35,8 +35,8 @@ type Header2 struct {
 
 func newHeader2(fs []headerField) Header2 {
 	// Reverse order
-	for i := len(fs)/2-1; i >= 0; i-- {
-		opp := len(fs)-1-i
+	for i := len(fs)/2 - 1; i >= 0; i-- {
+		opp := len(fs) - 1 - i
 		fs[i], fs[opp] = fs[opp], fs[i]
 	}
 
@@ -62,7 +62,7 @@ func (h *Header2) Add(k, v string) {
 	}
 
 	h.l = append(h.l, newHeaderField(k, v))
-	f := &h.l[len(h.l) - 1]
+	f := &h.l[len(h.l)-1]
 	h.m[k] = append(h.m[k], f)
 }
 
@@ -73,7 +73,7 @@ func (h *Header2) Get(k string) string {
 	if len(fields) == 0 {
 		return ""
 	}
-	return fields[len(fields) - 1].v
+	return fields[len(fields)-1].v
 }
 
 // Set sets the header fields associated with key to the single field value.
@@ -118,7 +118,7 @@ type HeaderFields interface {
 }
 
 type headerFields struct {
-	h *Header2
+	h   *Header2
 	cur int
 }
 
@@ -134,7 +134,7 @@ func (fs *headerFields) field() *headerField {
 	if fs.cur >= len(fs.h.l) {
 		panic("message: HeaderFields method called after Next returned false")
 	}
-	return &fs.h.l[len(fs.h.l) - fs.cur - 1]
+	return &fs.h.l[len(fs.h.l)-fs.cur-1]
 }
 
 func (fs *headerFields) Key() string {
@@ -175,8 +175,8 @@ func (h Header2) Fields() HeaderFields {
 }
 
 type headerFieldsByKey struct {
-	h *Header2
-	k string
+	h   *Header2
+	k   string
 	cur int
 }
 
@@ -192,7 +192,7 @@ func (fs *headerFieldsByKey) field() *headerField {
 	if fs.cur >= len(fs.h.m[fs.k]) {
 		panic("message: HeaderFields.Key or Value called after Next returned false")
 	}
-	return fs.h.m[fs.k][len(fs.h.m[fs.k]) - fs.cur - 1]
+	return fs.h.m[fs.k][len(fs.h.m[fs.k])-fs.cur-1]
 }
 
 func (fs *headerFieldsByKey) Key() string {
@@ -231,7 +231,6 @@ func (fs *headerFieldsByKey) Del() {
 func (h Header2) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{&h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
-
 
 func readLineSlice(r *bufio.Reader) ([]byte, error) {
 	var line []byte
@@ -374,12 +373,11 @@ func readHeader(r *bufio.Reader) (Header2, error) {
 	}
 }
 
-
 func writeHeader2(w io.Writer, h Header2) error {
 	// TODO: wrap lines
 	for i := len(h.l) - 1; i >= 0; i-- {
 		f := h.l[i]
-		if _, err := io.WriteString(w, f.k + ": " + f.v + "\r\n"); err != nil {
+		if _, err := io.WriteString(w, f.k+": "+f.v+"\r\n"); err != nil {
 			return err
 		}
 	}
