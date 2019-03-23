@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"net/textproto"
 )
 
@@ -371,4 +372,17 @@ func readHeader(r *bufio.Reader) (Header2, error) {
 			return newHeader2(fs), err
 		}
 	}
+}
+
+
+func writeHeader2(w io.Writer, h Header2) error {
+	// TODO: wrap lines
+	for i := len(h.l) - 1; i >= 0; i-- {
+		f := h.l[i]
+		if _, err := io.WriteString(w, f.k + ": " + f.v + "\r\n"); err != nil {
+			return err
+		}
+	}
+	_, err := io.WriteString(w, "\r\n")
+	return err
 }

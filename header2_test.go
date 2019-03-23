@@ -2,6 +2,7 @@ package message
 
 import (
 	"bufio"
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -140,17 +141,15 @@ func TestHeader2_FieldsByKey_Del(t *testing.T) {
 	}
 }
 
-const testHeader = `Received: from example.com by example.org
-Received: from localhost by example.com
-To: Taki Tachibana <taki.tachibana@example.org>
-From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>
-
-`
+const testHeader = "Received: from example.com by example.org\r\n" +
+"Received: from localhost by example.com\r\n" +
+"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
+"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
 
 func TestReadHeader(t *testing.T) {
 	h, err := readHeader(bufio.NewReader(strings.NewReader(testHeader)))
 	if err != nil {
-		t.Fatalf("readHeader() returned error %v", err)
+		t.Fatalf("readHeader() returned error: %v", err)
 	}
 
 	l := collectHeaderFields(h.Fields())
@@ -162,5 +161,18 @@ func TestReadHeader(t *testing.T) {
 	}
 	if !reflect.DeepEqual(l, want) {
 		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
+}
+
+func TestWriteHeader(t *testing.T) {
+	h := newTestHeader()
+
+	var b bytes.Buffer
+	if err := writeHeader2(&b, h); err != nil {
+		t.Fatalf("writeHeader() returned error: %v", err)
+	}
+
+	if b.String() != testHeader {
+		t.Errorf("writeHeader() wrote invalid data: got \n%v\n but want \n%v", b.String(), testHeader)
 	}
 }
