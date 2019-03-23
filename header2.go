@@ -1,6 +1,9 @@
 package message
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
 	"net/textproto"
 )
 
@@ -218,4 +221,146 @@ func (fs *headerFieldsByKey) Del() {
 // The header may not be mutated while iterating, except using HeaderFields.Del.
 func (h Header2) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{&h, textproto.CanonicalMIMEHeaderKey(k), -1}
+}
+
+
+func readLineSlice(r *bufio.Reader) ([]byte, error) {
+	var line []byte
+	for {
+		l, more, err := r.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+
+		// Avoid the copy if the first call produced a full line.
+		if line == nil && !more {
+			return l, nil
+		}
+
+		line = append(line, l...)
+		if !more {
+			break
+		}
+	}
+
+	return line, nil
+}
+
+func isSpace(c byte) bool {
+	return c == ' ' || c == '\t'
+}
+
+// trim returns s with leading and trailing spaces and tabs removed.
+// It does not assume Unicode or UTF-8.
+func trim(s []byte) []byte {
+	i := 0
+	for i < len(s) && isSpace(s[i]) {
+		i++
+	}
+	n := len(s)
+	for n > i && isSpace(s[n-1]) {
+		n--
+	}
+	return s[i:n]
+}
+
+// skipSpace skips R over all spaces and returns the number of bytes skipped.
+func skipSpace(r *bufio.Reader) int {
+	n := 0
+	for {
+		c, err := r.ReadByte()
+		if err != nil {
+			// bufio will keep err until next read.
+			break
+		}
+		if c != ' ' && c != '\t' {
+			r.UnreadByte()
+			break
+		}
+		n++
+	}
+	return n
+}
+
+func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
+	// Read the first line.
+	line, err := readLineSlice(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(line) == 0 { // blank line - no continuation
+		return line, nil
+	}
+
+	buf := trim(line)
+
+	// Read continuation lines.
+	for skipSpace(r) > 0 {
+		line, err := readLineSlice(r)
+		if err != nil {
+			break
+		}
+
+		buf = append(buf, ' ')
+		buf = append(buf, trim(line)...)
+	}
+	return buf, nil
+}
+
+func readHeader(r *bufio.Reader) (Header2, error) {
+	var fs []headerField
+
+	// The first line cannot start with a leading space.
+	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
+		line, err := readLineSlice(r)
+		if err != nil {
+			return newHeader2(fs), err
+		}
+
+		return newHeader2(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
+	}
+
+	for {
+		kv, err := readContinuedLineSlice(r)
+		if len(kv) == 0 {
+			return newHeader2(fs), err
+		}
+
+		// Key ends at first colon; should not have trailing spaces
+		// but they appear in the wild, violating specs, so we remove
+		// them if present.
+		i := bytes.IndexByte(kv, ':')
+		if i < 0 {
+			return newHeader2(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
+		}
+
+		endKey := i
+		for endKey > 0 && isSpace(kv[endKey-1]) {
+			endKey--
+		}
+
+		key := textproto.CanonicalMIMEHeaderKey(string(kv[:endKey]))
+
+		// As per RFC 7230 field-name is a token, tokens consist of one or more chars.
+		// We could return a ProtocolError here, but better to be liberal in what we
+		// accept, so if we get an empty key, skip it.
+		if key == "" {
+			continue
+		}
+
+		// Skip initial spaces in value.
+		i++ // skip colon
+		for i < len(kv) && isSpace(kv[i]) {
+			i++
+		}
+
+		value := string(kv[i:])
+
+		fs = append(fs, newHeaderField(key, value))
+
+		if err != nil {
+			return newHeader2(fs), err
+		}
+	}
 }

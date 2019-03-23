@@ -1,8 +1,10 @@
 package message
 
 import (
-	"testing"
+	"bufio"
 	"reflect"
+	"strings"
+	"testing"
 )
 
 var from = "Mitsuha Miyamizu <mitsuha.miyamizu@example.com>"
@@ -135,5 +137,30 @@ func TestHeader2_FieldsByKey_Del(t *testing.T) {
 	want := []string{"Received: from example.com by example.org"}
 	if !reflect.DeepEqual(l, want) {
 		t.Errorf("FieldsByKey(\"Received\") reported incorrect values after HeaderFields.Del(): got \n%#v\n but want \n%#v", l, want)
+	}
+}
+
+const testHeader = `Received: from example.com by example.org
+Received: from localhost by example.com
+To: Taki Tachibana <taki.tachibana@example.org>
+From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>
+
+`
+
+func TestReadHeader(t *testing.T) {
+	h, err := readHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	if err != nil {
+		t.Fatalf("readHeader() returned error %v", err)
+	}
+
+	l := collectHeaderFields(h.Fields())
+	want := []string{
+		"Received: from example.com by example.org",
+		"Received: from localhost by example.com",
+		"To: Taki Tachibana <taki.tachibana@example.org>",
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>",
+	}
+	if !reflect.DeepEqual(l, want) {
+		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
 	}
 }
