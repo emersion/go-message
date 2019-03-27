@@ -32,10 +32,10 @@ func ExampleReader() {
 		switch h := p.Header.(type) {
 		case mail.TextHeader:
 			b, _ := ioutil.ReadAll(p.Body)
-			log.Println("Got text: %v", string(b))
+			log.Printf("Got text: %v\n", string(b))
 		case mail.AttachmentHeader:
 			filename, _ := h.Filename()
-			log.Println("Got attachment: %v", filename)
+			log.Printf("Got attachment: %v\n", filename)
 		}
 	}
 }
