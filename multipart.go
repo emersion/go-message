@@ -50,7 +50,12 @@ func (m *multipartBody) Read(p []byte) (n int, err error) {
 	if m.r == nil {
 		r, w := io.Pipe()
 		m.r = r
-		m.w = newWriter(w, m.header)
+
+		var err error
+		m.w, err = createWriter(w, &m.header)
+		if err != nil {
+			return 0, err
+		}
 
 		// Prevent calls to NextPart to succeed
 		m.i = len(m.parts)

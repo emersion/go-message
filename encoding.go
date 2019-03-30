@@ -38,9 +38,11 @@ type nopCloser struct {
 	io.Writer
 }
 
-func (nopCloser) Close() error { return nil }
+func (nopCloser) Close() error {
+	return nil
+}
 
-func encodingWriter(enc string, w io.Writer) io.WriteCloser {
+func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 	var wc io.WriteCloser
 	switch strings.ToLower(enc) {
 	case "quoted-printable":
@@ -49,8 +51,10 @@ func encodingWriter(enc string, w io.Writer) io.WriteCloser {
 		wc = base64.NewEncoder(base64.StdEncoding, textwrapper.NewRFC822(w))
 	case "7bit", "8bit":
 		wc = nopCloser{textwrapper.New(w, "\r\n", 1000)}
-	default: // "binary"
+	case "binary", "":
 		wc = nopCloser{w}
+	default:
+		return nil, fmt.Errorf("unhandled encoding %q", enc)
 	}
-	return wc
+	return wc, nil
 }

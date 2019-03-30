@@ -273,8 +273,8 @@ func TestWriteHeader_continued(t *testing.T) {
 		if err := WriteHeader(&b, h); err != nil {
 			t.Fatalf("writeHeader() returned error: %v", err)
 		}
-		if b.String() != test.formatted + "\r\n" {
-			t.Errorf("Expected formatted header to be \n%v\n but got \n%v", test.formatted + "\r\n", b.String())
+		if b.String() != test.formatted+"\r\n" {
+			t.Errorf("Expected formatted header to be \n%v\n but got \n%v", test.formatted+"\r\n", b.String())
 		}
 	}
 }

@@ -63,7 +63,7 @@ func TestDecode_error(t *testing.T) {
 func TestEncode(t *testing.T) {
 	for _, test := range testEncodings {
 		var b bytes.Buffer
-		wc := encodingWriter(test.enc, &b)
+		wc, _ := encodingWriter(test.enc, &b)
 		io.WriteString(wc, test.decoded)
 		wc.Close()
 		if s := b.String(); s != test.encoded {

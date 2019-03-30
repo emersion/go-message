@@ -44,7 +44,7 @@ func ExampleRead() {
 func ExampleWriter() {
 	var b bytes.Buffer
 
-var 	h message.Header
+	var h message.Header
 	h.SetContentType("multipart/alternative", nil)
 	w, err := message.CreateWriter(&b, h)
 	if err != nil {
