@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-func encodeHeader(s string) string {
-	return mime.QEncoding.Encode("utf-8", s)
-}
-
 type unknownCharsetError struct {
 	error
 }
@@ -50,4 +46,8 @@ func decodeHeader(s string) (string, error) {
 		return s, err
 	}
 	return dec, nil
+}
+
+func encodeHeader(s string) string {
+	return mime.QEncoding.Encode("utf-8", s)
 }

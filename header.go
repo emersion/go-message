@@ -2,17 +2,10 @@ package message
 
 import (
 	"mime"
-	"regexp"
-	"strings"
 	stdtextproto "net/textproto"
 
 	"github.com/emersion/go-message/textproto"
 )
-
-const maxHeaderLen = 76
-
-// Regexp that detects Quoted Printable (QP) characters
-var qpReg = regexp.MustCompile("(=[0-9A-Z]{2,2})+")
 
 func parseHeaderWithParams(s string) (f string, params map[string]string, err error) {
 	f, params, err = mime.ParseMediaType(s)
@@ -51,82 +44,6 @@ func headerToMap(h textproto.Header) stdtextproto.MIMEHeader {
 		m.Add(fields.Key(), fields.Value())
 	}
 	return m
-}
-
-// formatHeaderField formats a header field, ensuring each line is no longer
-// than 76 characters. It tries to fold lines at whitespace characters if
-// possible. If the header contains a word longer than this limit, it will be
-// split.
-func formatHeaderField(k, v string) string {
-	s := k + ": "
-
-	if v == "" {
-		return s + "\r\n"
-	}
-
-	first := true
-	for len(v) > 0 {
-		maxlen := maxHeaderLen
-		if first {
-			maxlen -= len(s)
-		}
-
-		// We'll need to fold before i
-		foldBefore := maxlen + 1
-		foldAt := len(v)
-
-		var folding string
-		if foldBefore > len(v) {
-			// We reached the end of the string
-			if v[len(v)-1] != '\n' {
-				// If there isn't already a trailing CRLF, insert one
-				folding = "\r\n"
-			}
-		} else {
-			// Find the last QP character before limit
-			foldAtQP := qpReg.FindAllStringIndex(v[:foldBefore], -1)
-			// Find the closest whitespace before i
-			foldAtEOL := strings.LastIndexAny(v[:foldBefore], " \t\n")
-
-			// Fold at the latest whitespace by default
-			foldAt = foldAtEOL
-
-			// if there are QP characters in the string
-			if len(foldAtQP) > 0 {
-				// Get the start index of the last QP character
-				foldAtQPLastIndex := foldAtQP[len(foldAtQP)-1][0]
-				if foldAtQPLastIndex > foldAt {
-					// Fold at the latest QP character if there are no whitespaces after it and before line hard limit
-					foldAt = foldAtQPLastIndex
-				}
-			}
-
-			if foldAt == 0 {
-				// The whitespace we found was the previous folding WSP
-				foldAt = foldBefore - 1
-			} else if foldAt < 0 {
-				// We didn't find any whitespace, we have to insert one
-				foldAt = foldBefore - 2
-			}
-
-			switch v[foldAt] {
-			case ' ', '\t':
-				if v[foldAt-1] != '\n' {
-					folding = "\r\n" // The next char will be a WSP, don't need to insert one
-				}
-			case '\n':
-				folding = "" // There is already a CRLF, nothing to do
-			default:
-				folding = "\r\n " // Another char, we need to insert CRLF + WSP
-			}
-		}
-
-		s += v[:foldAt] + folding
-		v = v[foldAt:]
-		first = false
-	}
-
-	return s
 }
 
 // A Header represents the key-value pairs in a message header.

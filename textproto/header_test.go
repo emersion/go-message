@@ -207,3 +207,74 @@ func TestHeaderWithWhitespace(t *testing.T) {
 		t.Errorf("writeHeader() wrote invalid data: got \n%v\n but want \n%v", b.String(), testHeaderWithWhitespace)
 	}
 }
+
+var formatHeaderFieldTests = []struct {
+	k, v      string
+	formatted string
+}{
+	{
+		k:         "From",
+		v:         "Mitsuha Miyamizu <mitsuha.miyamizu@example.org>",
+		formatted: "From: Mitsuha Miyamizu <mitsuha.miyamizu@example.org>\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "This is a very long subject, much longer than just the 76 characters limit that applies to message header fields",
+		formatted: "Subject: This is a very long subject, much longer than just the 76\r\n characters limit that applies to message header fields\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "This is        yet          \t  another    subject          \t                   with many         whitespace      characters",
+		formatted: "Subject: This is        yet          \t  another    subject          \t       \r\n            with many         whitespace      characters\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "=?utf-8?q?=E2=80=9CDeveloper_reads_customer_requested_change.=E2=80=9D=0A?= =?utf-8?q?=0ACaravaggio=0A=0AOil_on...?=",
+		formatted: "Subject: =?utf-8?q?=E2=80=9CDeveloper_reads_customer_requested_change.\r\n =E2=80=9D=0A?= =?utf-8?q?=0ACaravaggio=0A=0AOil_on...?=\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "=?utf-8?q?=E2=80=9CShort subject=E2=80=9D=0A?= =?utf-8?q?=0AAuthor=0A=0AOil_on...?=",
+		formatted: "Subject: =?utf-8?q?=E2=80=9CShort subject=E2=80=9D=0A?= =?utf-8?q?\r\n =0AAuthor=0A=0AOil_on...?=\r\n",
+	},
+	{
+		k:         "Subject",
+		v:         "=?utf-8?q?=E2=80=9CVery long subject very long subject very long subject very long subject=E2=80=9D=0A?= =?utf-8?q?=0ALong second part of subject long second part of subject long second part of subject long subject=0A=0AOil_on...?=",
+		formatted: "Subject: =?utf-8?q?=E2=80=9CVery long subject very long subject very long\r\n subject very long subject=E2=80=9D=0A?= =?utf-8?q?=0ALong second part of\r\n subject long second part of subject long second part of subject long\r\n subject=0A=0AOil_on...?=\r\n",
+	},
+	{
+		k:         "DKIM-Signature",
+		v:         "v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
+		formatted: "Dkim-Signature: v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
+	},
+	{
+		k:         "DKIM-Signature",
+		v:         "v=1; h=From; d=example.org; b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6xNAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrIx0orEtZV4bmp/YzhwvcubU4=\r\n",
+		formatted: "Dkim-Signature: v=1; h=From; d=example.org;\r\n b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x\r\n NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI\r\n x0orEtZV4bmp/YzhwvcubU4=\r\n",
+	},
+	{
+		k:         "Bcc",
+		v:         "",
+		formatted: "Bcc: \r\n",
+	},
+	{
+		k:         "Bcc",
+		v:         " ",
+		formatted: "Bcc:  \r\n",
+	},
+}
+
+func TestWriteHeader_continued(t *testing.T) {
+	for _, test := range formatHeaderFieldTests {
+		var h Header
+		h.Add(test.k, test.v)
+
+		var b bytes.Buffer
+		if err := WriteHeader(&b, h); err != nil {
+			t.Fatalf("writeHeader() returned error: %v", err)
+		}
+		if b.String() != test.formatted + "\r\n" {
+			t.Errorf("Expected formatted header to be \n%v\n but got \n%v", test.formatted + "\r\n", b.String())
+		}
+	}
+}
