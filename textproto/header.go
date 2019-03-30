@@ -1,4 +1,4 @@
-package message
+package textproto
 
 import (
 	"bufio"
@@ -28,14 +28,14 @@ func newHeaderField(k, v string, b []byte) headerField {
 // Mutating the header is restricted: the only two allowed operations are
 // inserting a new header field at the top and deleting a header field. This is
 // again necessary for DKIM.
-type Header2 struct {
+type Header struct {
 	// Fields are in reverse order so that inserting a new field at the top is
 	// cheap.
 	l []headerField
 	m map[string][]*headerField
 }
 
-func newHeader2(fs []headerField) Header2 {
+func newHeader(fs []headerField) Header {
 	// Reverse order
 	for i := len(fs)/2 - 1; i >= 0; i-- {
 		opp := len(fs) - 1 - i
@@ -51,12 +51,12 @@ func newHeader2(fs []headerField) Header2 {
 		}
 	}
 
-	return Header2{l: fs, m: m}
+	return Header{l: fs, m: m}
 }
 
 // Add adds the key, value pair to the header. It prepends to any existing
 // fields associated with key.
-func (h *Header2) Add(k, v string) {
+func (h *Header) Add(k, v string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
 	if h.m == nil {
@@ -70,7 +70,7 @@ func (h *Header2) Add(k, v string) {
 
 // Get gets the first value associated with the given key. If there are no
 // values associated with the key, Get returns "".
-func (h *Header2) Get(k string) string {
+func (h *Header) Get(k string) string {
 	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
 	if len(fields) == 0 {
 		return ""
@@ -80,13 +80,13 @@ func (h *Header2) Get(k string) string {
 
 // Set sets the header fields associated with key to the single field value.
 // It replaces any existing values associated with key.
-func (h *Header2) Set(k, v string) {
+func (h *Header) Set(k, v string) {
 	h.Del(k)
 	h.Add(k, v)
 }
 
 // Del deletes the values associated with key.
-func (h *Header2) Del(k string) {
+func (h *Header) Del(k string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
 	// Delete existing keys
@@ -100,7 +100,7 @@ func (h *Header2) Del(k string) {
 }
 
 // Has checks whether the header has a field with the specified key.
-func (h *Header2) Has(k string) bool {
+func (h *Header) Has(k string) bool {
 	_, ok := h.m[textproto.CanonicalMIMEHeaderKey(k)]
 	return ok
 }
@@ -120,7 +120,7 @@ type HeaderFields interface {
 }
 
 type headerFields struct {
-	h   *Header2
+	h   *Header
 	cur int
 }
 
@@ -172,12 +172,12 @@ func (fs *headerFields) Del() {
 // Fields iterates over all the header fields.
 //
 // The header may not be mutated while iterating, except using HeaderFields.Del.
-func (h Header2) Fields() HeaderFields {
+func (h Header) Fields() HeaderFields {
 	return &headerFields{&h, -1}
 }
 
 type headerFieldsByKey struct {
-	h   *Header2
+	h   *Header
 	k   string
 	cur int
 }
@@ -230,7 +230,7 @@ func (fs *headerFieldsByKey) Del() {
 // FieldsByKey iterates over all fields having the specified key.
 //
 // The header may not be mutated while iterating, except using HeaderFields.Del.
-func (h Header2) FieldsByKey(k string) HeaderFields {
+func (h Header) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{&h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
 
@@ -357,30 +357,30 @@ func trimAroundNewlines(v []byte) string {
 	return b.String()
 }
 
-func readHeader(r *bufio.Reader) (Header2, error) {
+func readHeader(r *bufio.Reader) (Header, error) {
 	var fs []headerField
 
 	// The first line cannot start with a leading space.
 	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
 		line, err := readLineSlice(r, nil)
 		if err != nil {
-			return newHeader2(fs), err
+			return newHeader(fs), err
 		}
 
-		return newHeader2(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
+		return newHeader(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
 	}
 
 	for {
 		kv, err := readContinuedLineSlice(r)
 		if len(kv) == 0 {
-			return newHeader2(fs), err
+			return newHeader(fs), err
 		}
 
 		// Key ends at first colon; should not have trailing spaces but they
 		// appear in the wild, violating specs, so we remove them if present.
 		i := bytes.IndexByte(kv, ':')
 		if i < 0 {
-			return newHeader2(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
+			return newHeader(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
 		}
 
 		key := textproto.CanonicalMIMEHeaderKey(string(trim(kv[:i])))
@@ -399,12 +399,12 @@ func readHeader(r *bufio.Reader) (Header2, error) {
 		fs = append(fs, newHeaderField(key, value, kv))
 
 		if err != nil {
-			return newHeader2(fs), err
+			return newHeader(fs), err
 		}
 	}
 }
 
-func writeHeader2(w io.Writer, h Header2) error {
+func writeHeader(w io.Writer, h Header) error {
 	// TODO: wrap lines when necessary
 
 	for i := len(h.l) - 1; i >= 0; i-- {

@@ -1,4 +1,4 @@
-package message
+package textproto
 
 import (
 	"bufio"
@@ -12,8 +12,8 @@ var from = "Mitsuha Miyamizu <mitsuha.miyamizu@example.com>"
 var to = "Taki Tachibana <taki.tachibana@example.org>"
 var received2 = "from example.com by example.org"
 
-func newTestHeader() Header2 {
-	var h Header2
+func newTestHeader() Header {
+	var h Header
 	h.Add("From", from)
 	h.Add("To", to)
 	h.Add("Received", "from localhost by example.com")
@@ -29,7 +29,7 @@ func collectHeaderFields(fields HeaderFields) []string {
 	return l
 }
 
-func TestHeader2(t *testing.T) {
+func TestHeader(t *testing.T) {
 	h := newTestHeader()
 
 	if got := h.Get("From"); got != from {
@@ -74,7 +74,7 @@ func TestHeader2(t *testing.T) {
 	}
 }
 
-func TestHeader2_Set(t *testing.T) {
+func TestHeader_Set(t *testing.T) {
 	h := newTestHeader()
 
 	h.Set("From", to)
@@ -88,7 +88,7 @@ func TestHeader2_Set(t *testing.T) {
 	}
 }
 
-func TestHeader2_Del(t *testing.T) {
+func TestHeader_Del(t *testing.T) {
 	h := newTestHeader()
 
 	h.Del("Received")
@@ -102,7 +102,7 @@ func TestHeader2_Del(t *testing.T) {
 	}
 }
 
-func TestHeader2_Fields_Del(t *testing.T) {
+func TestHeader_Fields_Del(t *testing.T) {
 	h := newTestHeader()
 
 	ok := false
@@ -125,7 +125,7 @@ func TestHeader2_Fields_Del(t *testing.T) {
 	}
 }
 
-func TestHeader2_FieldsByKey_Del(t *testing.T) {
+func TestHeader_FieldsByKey_Del(t *testing.T) {
 	h := newTestHeader()
 
 	fields := h.FieldsByKey("Received")
@@ -168,7 +168,7 @@ func TestWriteHeader(t *testing.T) {
 	h := newTestHeader()
 
 	var b bytes.Buffer
-	if err := writeHeader2(&b, h); err != nil {
+	if err := writeHeader(&b, h); err != nil {
 		t.Fatalf("writeHeader() returned error: %v", err)
 	}
 
@@ -199,7 +199,7 @@ func TestHeaderWithWhitespace(t *testing.T) {
 	}
 
 	var b bytes.Buffer
-	if err := writeHeader2(&b, h); err != nil {
+	if err := writeHeader(&b, h); err != nil {
 		t.Fatalf("writeHeader() returned error: %v", err)
 	}
 
