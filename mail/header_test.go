@@ -13,7 +13,7 @@ func TestHeader(t *testing.T) {
 	from := []*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
 	subject := "Café"
 
-	h := mail.NewHeader()
+	var h mail.Header
 	h.SetAddressList("From", from)
 	h.SetDate(date)
 	h.SetSubject(subject)

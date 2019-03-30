@@ -4,23 +4,10 @@ import (
 	"bufio"
 	"io"
 	"mime/multipart"
-	"net/textproto"
 	"strings"
 
-	"github.com/emersion/go-message/charset"
+	"github.com/emersion/go-message/textproto"
 )
-
-type unknownEncodingError struct {
-	error
-}
-
-// IsUnknownEncoding returns a boolean indicating whether the error is known to
-// report that the transfer encoding or the charset advertised by the entity is
-// unknown.
-func IsUnknownEncoding(err error) bool {
-	_, ok := err.(unknownEncodingError)
-	return ok
-}
 
 // An Entity is either a whole message or a one of the parts in the body of a
 // multipart entity.
@@ -36,7 +23,7 @@ type Entity struct {
 // transfer encoding and charset are automatically decoded to UTF-8.
 //
 // If the message uses an unknown transfer encoding or charset, New returns an
-// error that verifies IsUnknownEncoding, but also returns an Entity that can
+// error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
 func New(header Header, body io.Reader) (*Entity, error) {
 	var err error
@@ -50,8 +37,8 @@ func New(header Header, body io.Reader) (*Entity, error) {
 
 	mediaType, mediaParams, _ := header.ContentType()
 	if ch, ok := mediaParams["charset"]; ok {
-		if converted, charsetErr := charset.Reader(ch, body); charsetErr != nil {
-			err = unknownEncodingError{charsetErr}
+		if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
+			err = unknownCharsetError{charsetErr}
 		} else {
 			body = converted
 		}
@@ -69,7 +56,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 // parts. The Content-Type header must begin with "multipart/".
 //
 // If the message uses an unknown transfer encoding, NewMultipart returns an
-// error that verifies IsUnknownEncoding, but also returns an Entity that can
+// error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
 func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 	r := &multipartBody{
@@ -81,20 +68,20 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 }
 
 // Read reads a message from r. The message's encoding and charset are
-// automatically decoded to UTF-8. Note that this function only reads the
+// automatically decoded to raw UTF-8. Note that this function only reads the
 // message header.
 //
 // If the message uses an unknown transfer encoding or charset, Read returns an
-// error that verifies IsUnknownEncoding, but also returns an Entity that can
+// error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
 func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
-	h, err := textproto.NewReader(br).ReadMIMEHeader()
+	h, err := textproto.ReadHeader(br)
 	if err != nil {
 		return nil, err
 	}
 
-	return New(Header(h), br)
+	return New(Header{h}, br)
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's

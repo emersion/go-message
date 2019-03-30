@@ -27,7 +27,7 @@ func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 // CreateText creates a TextWriter. One or more parts representing the same text
 // in different formats can be written to a TextWriter.
 func (w *Writer) CreateText() (*TextWriter, error) {
-	h := make(message.Header)
+	var h message.Header
 	h.Set("Content-Type", "multipart/alternative")
 
 	mw, err := w.mw.CreatePart(h)

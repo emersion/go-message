@@ -12,7 +12,7 @@ func TestHeader(t *testing.T) {
 	disp := "attachment"
 	dispParams := map[string]string{"filename": "complémentarité.txt"}
 
-	h := make(Header)
+	var h Header
 	h.SetContentType(mediaType, mediaParams)
 	h.SetContentDescription(desc)
 	h.SetContentDisposition(disp, dispParams)
@@ -106,7 +106,7 @@ func TestFormatHeaderField(t *testing.T) {
 }
 
 func TestEmptyContentType(t *testing.T) {
-	h := make(Header)
+	var h Header
 
 	mediaType := "text/plain"
 	if gotMediaType, _, err := h.ContentType(); err != nil {

@@ -2,7 +2,6 @@ package message_test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"strings"
@@ -10,28 +9,12 @@ import (
 	"github.com/emersion/go-message"
 )
 
-func ExampleHeader2() {
-	var h message.Header2
-	h.Add("From", "<root@nsa.gov>")
-	h.Add("To", "<root@gchq.gov.uk>")
-	h.Set("Subject", "Tonight's dinner")
-
-	fmt.Println("From: ", h.Get("From"))
-	fmt.Println("Has Received: ", h.Has("Received"))
-
-	fmt.Println("Header fields:")
-	fields := h.Fields()
-	for fields.Next() {
-		fmt.Println("  ", fields.Key())
-	}
-}
-
 func ExampleRead() {
 	// Let's assume r is an io.Reader that contains a message.
 	var r io.Reader
 
 	m, err := message.Read(r)
-	if message.IsUnknownEncoding(err) {
+	if message.IsUnknownCharset(err) {
 		// This error is not fatal
 		log.Println("Unknown encoding:", err)
 	} else if err != nil {
@@ -61,14 +44,14 @@ func ExampleRead() {
 func ExampleWriter() {
 	var b bytes.Buffer
 
-	h := make(message.Header)
+var 	h message.Header
 	h.SetContentType("multipart/alternative", nil)
 	w, err := message.CreateWriter(&b, h)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	h1 := make(message.Header)
+	var h1 message.Header
 	h1.SetContentType("text/html", nil)
 	w1, err := w.CreatePart(h1)
 	if err != nil {
@@ -77,7 +60,7 @@ func ExampleWriter() {
 	io.WriteString(w1, "<h1>Hello World!</h1><p>This is an HTML part.</p>")
 	w1.Close()
 
-	h2 := make(message.Header)
+	var h2 message.Header
 	h1.SetContentType("text/plain", nil)
 	w2, err := w.CreatePart(h2)
 	if err != nil {
@@ -96,7 +79,7 @@ func Example_transform() {
 	var r io.Reader
 
 	m, err := message.Read(r)
-	if message.IsUnknownEncoding(err) {
+	if message.IsUnknownCharset(err) {
 		log.Println("Unknown encoding:", err)
 	} else if err != nil {
 		log.Fatal(err)

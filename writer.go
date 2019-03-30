@@ -4,28 +4,10 @@ import (
 	"errors"
 	"io"
 	"mime/multipart"
-	"net/textproto"
-	"sort"
 	"strings"
-)
 
-// From https://golang.org/src/mime/multipart/writer.go?s=2140:2215#L76
-func writeHeader(w io.Writer, header Header) error {
-	keys := make([]string, 0, len(header))
-	for k := range header {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		for _, v := range header[k] {
-			if _, err := io.WriteString(w, formatHeaderField(k, v)); err != nil {
-				return err
-			}
-		}
-	}
-	_, err := io.WriteString(w, "\r\n")
-	return err
-}
+	"github.com/emersion/go-message/textproto"
+)
 
 // A Writer formats entities.
 type Writer struct {
@@ -69,7 +51,7 @@ func newWriter(w io.Writer, header Header) *Writer {
 // encoding, data written to the Writer will automatically be encoded with it.
 func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	ww := newWriter(w, header)
-	if err := writeHeader(w, header); err != nil {
+	if err := textproto.WriteHeader(w, header.Header); err != nil {
 		return nil, err
 	}
 	return ww, nil
@@ -106,7 +88,7 @@ func (w *Writer) CreatePart(header Header) (*Writer, error) {
 
 	ww := &struct{ io.Writer }{nil}
 	cw := newWriter(ww, header)
-	pw, err := w.mw.CreatePart(textproto.MIMEHeader(header))
+	pw, err := w.mw.CreatePart(headerToMap(header.Header))
 	if err != nil {
 		return nil, err
 	}

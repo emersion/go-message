@@ -11,7 +11,7 @@ type AttachmentHeader struct {
 
 // NewAttachmentHeader creates a new AttachmentHeader.
 func NewAttachmentHeader() AttachmentHeader {
-	h := AttachmentHeader{make(message.Header)}
+	var h AttachmentHeader
 	h.Set("Content-Disposition", "attachment")
 	h.Set("Content-Transfer-Encoding", "base64")
 	return h

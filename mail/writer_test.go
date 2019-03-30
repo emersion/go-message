@@ -17,7 +17,7 @@ func ExampleWriter() {
 	to := []*mail.Address{{"Taki Tachibana", "taki.tachibana@example.org"}}
 
 	// Create our mail header
-	h := mail.NewHeader()
+	var h mail.Header
 	h.SetDate(time.Now())
 	h.SetAddressList("From", from)
 	h.SetAddressList("To", to)
@@ -62,7 +62,7 @@ func ExampleWriter() {
 func TestWriter(t *testing.T) {
 	var b bytes.Buffer
 
-	h := mail.NewHeader()
+	var h mail.Header
 	h.SetSubject("Your Name")
 	mw, err := mail.CreateWriter(&b, h)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestWriter(t *testing.T) {
 func TestWriter_singleText(t *testing.T) {
 	var b bytes.Buffer
 
-	h := mail.NewHeader()
+	var h mail.Header
 	h.SetSubject("Your Name")
 	mw, err := mail.CreateWriter(&b, h)
 	if err != nil {

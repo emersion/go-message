@@ -357,7 +357,9 @@ func trimAroundNewlines(v []byte) string {
 	return b.String()
 }
 
-func readHeader(r *bufio.Reader) (Header, error) {
+// ReadHeader reads a MIME header from r. The header is a sequence of possibly
+// continued Key: Value lines ending in a blank line.
+func ReadHeader(r *bufio.Reader) (Header, error) {
 	var fs []headerField
 
 	// The first line cannot start with a leading space.
@@ -404,7 +406,8 @@ func readHeader(r *bufio.Reader) (Header, error) {
 	}
 }
 
-func writeHeader(w io.Writer, h Header) error {
+// WriteHeader writes a MIME header to w.
+func WriteHeader(w io.Writer, h Header) error {
 	// TODO: wrap lines when necessary
 
 	for i := len(h.l) - 1; i >= 0; i-- {

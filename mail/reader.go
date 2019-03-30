@@ -44,7 +44,7 @@ func NewReader(e *message.Entity) *Reader {
 	if mr == nil {
 		// Artificially create a multipart entity
 		// With this header, no error will be returned by message.NewMultipart
-		h := make(message.Header)
+		var h message.Header
 		h.Set("Content-Type", "multipart/mixed")
 		me, _ := message.NewMultipart(h, []*message.Entity{e})
 		mr = me.MultipartReader()
@@ -59,11 +59,11 @@ func NewReader(e *message.Entity) *Reader {
 // CreateReader reads a mail header from r and returns a new mail reader.
 //
 // If the message uses an unknown transfer encoding or charset, CreateReader
-// returns an error that verifies message.IsUnknownEncoding, but also returns a
+// returns an error that verifies message.IsUnknownCharset, but also returns a
 // Reader that can be used.
 func CreateReader(r io.Reader) (*Reader, error) {
 	e, err := message.Read(r)
-	if err != nil && !message.IsUnknownEncoding(err) {
+	if err != nil && !message.IsUnknownCharset(err) {
 		return nil, err
 	}
 
@@ -77,7 +77,7 @@ func CreateReader(r io.Reader) (*Reader, error) {
 // NextPart, otherwise it will be discarded.
 //
 // If the part uses an unknown transfer encoding or charset, NextPart returns an
-// error that verifies message.IsUnknownEncoding, but also returns a Part that
+// error that verifies message.IsUnknownCharset, but also returns a Part that
 // can be used.
 func (r *Reader) NextPart() (*Part, error) {
 	for r.readers.Len() > 0 {
@@ -89,7 +89,7 @@ func (r *Reader) NextPart() (*Part, error) {
 			// This whole multipart entity has been read, continue with the next one
 			r.readers.Remove(e)
 			continue
-		} else if err != nil && !message.IsUnknownEncoding(err) {
+		} else if err != nil && !message.IsUnknownCharset(err) {
 			return nil, err
 		}
 
@@ -102,9 +102,9 @@ func (r *Reader) NextPart() (*Part, error) {
 			t, _, _ := p.Header.ContentType()
 			disp, _, _ := p.Header.ContentDisposition()
 			if strings.HasPrefix(t, "text/") && disp != "attachment" {
-				mp.Header = TextHeader{p.Header}
+				mp.Header = &TextHeader{p.Header}
 			} else {
-				mp.Header = AttachmentHeader{p.Header}
+				mp.Header = &AttachmentHeader{p.Header}
 			}
 			return mp, err
 		}

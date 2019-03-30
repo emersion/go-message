@@ -9,7 +9,7 @@ import (
 )
 
 func testMakeEntity() *Entity {
-	h := make(Header)
+	var h Header
 	h.Set("Content-Type", "text/plain; charset=US-ASCII")
 	h.Set("Content-Transfer-Encoding", "base64")
 
@@ -31,17 +31,17 @@ func TestNewEntity(t *testing.T) {
 }
 
 func testMakeMultipart() *Entity {
-	h1 := make(Header)
+	var h1 Header
 	h1.Set("Content-Type", "text/plain")
 	r1 := strings.NewReader("Text part")
 	e1, _ := New(h1, r1)
 
-	h2 := make(Header)
+	var h2 Header
 	h2.Set("Content-Type", "text/html")
 	r2 := strings.NewReader("<p>HTML part</p>")
 	e2, _ := New(h2, r2)
 
-	h := make(Header)
+	var h Header
 	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
 	e, _ := NewMultipart(h, []*Entity{e1, e2})
 	return e
@@ -163,7 +163,7 @@ func TestEntity_WriteTo_multipart(t *testing.T) {
 }
 
 func TestNew_unknownTransferEncoding(t *testing.T) {
-	h := make(Header)
+	var h Header
 	h.Set("Content-Transfer-Encoding", "i-dont-exist")
 
 	expected := "hey there"
@@ -173,8 +173,8 @@ func TestNew_unknownTransferEncoding(t *testing.T) {
 	if err == nil {
 		t.Fatal("New(unknown transfer encoding): expected an error")
 	}
-	if !IsUnknownEncoding(err) {
-		t.Fatal("New(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
+	if !isUnknownEncoding(err) {
+		t.Fatal("New(unknown transfer encoding): expected an error that verifies isUnknownEncoding")
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {
@@ -185,7 +185,7 @@ func TestNew_unknownTransferEncoding(t *testing.T) {
 }
 
 func TestNew_unknownCharset(t *testing.T) {
-	h := make(Header)
+	var h Header
 	h.Set("Content-Type", "text/plain; charset=I-DONT-EXIST")
 
 	expected := "hey there"
@@ -195,8 +195,8 @@ func TestNew_unknownCharset(t *testing.T) {
 	if err == nil {
 		t.Fatal("New(unknown charset): expected an error")
 	}
-	if !IsUnknownEncoding(err) {
-		t.Fatal("New(unknown charset): expected an error that verifies IsUnknownEncoding")
+	if !IsUnknownCharset(err) {
+		t.Fatal("New(unknown charset): expected an error that verifies IsUnknownCharset")
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {

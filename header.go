@@ -2,11 +2,11 @@ package message
 
 import (
 	"mime"
-	"net/textproto"
 	"regexp"
 	"strings"
+	stdtextproto "net/textproto"
 
-	"github.com/emersion/go-message/charset"
+	"github.com/emersion/go-message/textproto"
 )
 
 const maxHeaderLen = 76
@@ -20,7 +20,7 @@ func parseHeaderWithParams(s string) (f string, params map[string]string, err er
 		return s, nil, err
 	}
 	for k, v := range params {
-		params[k], _ = charset.DecodeHeader(v)
+		params[k], _ = decodeHeader(v)
 	}
 	return
 }
@@ -28,9 +28,29 @@ func parseHeaderWithParams(s string) (f string, params map[string]string, err er
 func formatHeaderWithParams(f string, params map[string]string) string {
 	encParams := make(map[string]string)
 	for k, v := range params {
-		encParams[k] = charset.EncodeHeader(v)
+		encParams[k] = encodeHeader(v)
 	}
 	return mime.FormatMediaType(f, encParams)
+}
+
+func mapToHeader(m stdtextproto.MIMEHeader) textproto.Header {
+	var h textproto.Header
+	for k, vs := range m {
+		for i := len(vs) - 1; i >= 0; i-- {
+			h.Add(k, vs[i])
+		}
+	}
+	return h
+}
+
+// headerToMap converts a textproto.Header to a map. It looses information.
+func headerToMap(h textproto.Header) stdtextproto.MIMEHeader {
+	m := make(stdtextproto.MIMEHeader)
+	fields := h.Fields()
+	for fields.Next() {
+		m.Add(fields.Key(), fields.Value())
+	}
+	return m
 }
 
 // formatHeaderField formats a header field, ensuring each line is no longer
@@ -110,35 +130,14 @@ func formatHeaderField(k, v string) string {
 }
 
 // A Header represents the key-value pairs in a message header.
-type Header map[string][]string
-
-// Add adds the key, value pair to the header. It appends to any existing values
-// associated with key.
-func (h Header) Add(key, value string) {
-	textproto.MIMEHeader(h).Add(key, value)
-}
-
-// Set sets the header entries associated with key to the single element value.
-// It replaces any existing values associated with key.
-func (h Header) Set(key, value string) {
-	textproto.MIMEHeader(h).Set(key, value)
-}
-
-// Get gets the first value associated with the given key. If there are no
-// values associated with the key, Get returns "".
-func (h Header) Get(key string) string {
-	return textproto.MIMEHeader(h).Get(key)
-}
-
-// Del deletes the values associated with key.
-func (h Header) Del(key string) {
-	textproto.MIMEHeader(h).Del(key)
+type Header struct {
+	textproto.Header
 }
 
 // ContentType parses the Content-Type header field.
 //
 // If no Content-Type is specified, it returns "text/plain".
-func (h Header) ContentType() (t string, params map[string]string, err error) {
+func (h *Header) ContentType() (t string, params map[string]string, err error) {
 	v := h.Get("Content-Type")
 	if v == "" {
 		return "text/plain", nil, nil
@@ -147,28 +146,28 @@ func (h Header) ContentType() (t string, params map[string]string, err error) {
 }
 
 // SetContentType formats the Content-Type header field.
-func (h Header) SetContentType(t string, params map[string]string) {
+func (h *Header) SetContentType(t string, params map[string]string) {
 	h.Set("Content-Type", formatHeaderWithParams(t, params))
 }
 
 // ContentDescription parses the Content-Description header field.
-func (h Header) ContentDescription() (string, error) {
-	return charset.DecodeHeader(h.Get("Content-Description"))
+func (h *Header) ContentDescription() (string, error) {
+	return decodeHeader(h.Get("Content-Description"))
 }
 
 // SetContentDescription parses the Content-Description header field.
-func (h Header) SetContentDescription(desc string) {
-	h.Set("Content-Description", charset.EncodeHeader(desc))
+func (h *Header) SetContentDescription(desc string) {
+	h.Set("Content-Description", encodeHeader(desc))
 }
 
 // ContentDisposition parses the Content-Disposition header field, as defined in
 // RFC 2183.
-func (h Header) ContentDisposition() (disp string, params map[string]string, err error) {
+func (h *Header) ContentDisposition() (disp string, params map[string]string, err error) {
 	return parseHeaderWithParams(h.Get("Content-Disposition"))
 }
 
 // SetContentDisposition formats the Content-Disposition header field, as
 // defined in RFC 2183.
-func (h Header) SetContentDisposition(disp string, params map[string]string) {
+func (h *Header) SetContentDisposition(disp string, params map[string]string) {
 	h.Set("Content-Disposition", formatHeaderWithParams(disp, params))
 }

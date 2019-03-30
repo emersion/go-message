@@ -11,7 +11,7 @@ type TextHeader struct {
 
 // NewTextHeader creates a new message text header.
 func NewTextHeader() TextHeader {
-	h := TextHeader{make(message.Header)}
+	var h TextHeader
 	h.Set("Content-Disposition", "inline")
 	h.Set("Content-Transfer-Encoding", "quoted-printable")
 	return h

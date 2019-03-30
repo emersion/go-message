@@ -7,7 +7,7 @@ import (
 )
 
 func TestWriter_multipartWithoutCreatePart(t *testing.T) {
-	h := make(Header)
+	var h Header
 	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
 
 	var b bytes.Buffer
@@ -25,7 +25,7 @@ func TestWriter_multipartWithoutCreatePart(t *testing.T) {
 }
 
 func TestWriter_multipartWithoutBoundary(t *testing.T) {
-	h := make(Header)
+	var h Header
 	h.Set("Content-Type", "multipart/alternative")
 
 	var b bytes.Buffer

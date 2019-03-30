@@ -147,7 +147,7 @@ const testHeader = "Received: from example.com by example.org\r\n" +
 	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
 
 func TestReadHeader(t *testing.T) {
-	h, err := readHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	h, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestWriteHeader(t *testing.T) {
 	h := newTestHeader()
 
 	var b bytes.Buffer
-	if err := writeHeader(&b, h); err != nil {
+	if err := WriteHeader(&b, h); err != nil {
 		t.Fatalf("writeHeader() returned error: %v", err)
 	}
 
@@ -184,7 +184,7 @@ const testHeaderWithWhitespace = "Subject \t : \t Hey \r\n" +
 	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
 
 func TestHeaderWithWhitespace(t *testing.T) {
-	h, err := readHeader(bufio.NewReader(strings.NewReader(testHeaderWithWhitespace)))
+	h, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeaderWithWhitespace)))
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestHeaderWithWhitespace(t *testing.T) {
 	}
 
 	var b bytes.Buffer
-	if err := writeHeader(&b, h); err != nil {
+	if err := WriteHeader(&b, h); err != nil {
 		t.Fatalf("writeHeader() returned error: %v", err)
 	}
 

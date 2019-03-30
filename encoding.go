@@ -10,6 +10,15 @@ import (
 	"github.com/emersion/go-textwrapper"
 )
 
+type unknownEncodingError struct {
+	error
+}
+
+func isUnknownEncoding(err error) bool {
+	_, ok := err.(unknownEncodingError)
+	return ok
+}
+
 func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	var dec io.Reader
 	switch strings.ToLower(enc) {
