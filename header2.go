@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/textproto"
+	"strings"
 )
 
 type headerField struct {
+	b []byte // Raw header field, including whitespace
 	k string
 	v string
 }
 
-func newHeaderField(k, v string) headerField {
-	return headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v}
+func newHeaderField(k, v string, b []byte) headerField {
+	return headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v, b: b}
 }
 
 // A Header represents the key-value pairs in a message header.
@@ -61,7 +63,7 @@ func (h *Header2) Add(k, v string) {
 		h.m = make(map[string][]*headerField)
 	}
 
-	h.l = append(h.l, newHeaderField(k, v))
+	h.l = append(h.l, newHeaderField(k, v, nil))
 	f := &h.l[len(h.l)-1]
 	h.m[k] = append(h.m[k], f)
 }
@@ -232,8 +234,7 @@ func (h Header2) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{&h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
 
-func readLineSlice(r *bufio.Reader) ([]byte, error) {
-	var line []byte
+func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
 		if err != nil {
@@ -281,7 +282,7 @@ func skipSpace(r *bufio.Reader) int {
 			// bufio will keep err until next read.
 			break
 		}
-		if c != ' ' && c != '\t' {
+		if !isSpace(c) {
 			r.UnreadByte()
 			break
 		}
@@ -290,9 +291,18 @@ func skipSpace(r *bufio.Reader) int {
 	return n
 }
 
+func hasContinuationLine(r *bufio.Reader) bool {
+	c, err := r.ReadByte()
+	if err != nil {
+		return false // bufio will keep err until next read.
+	}
+	r.UnreadByte()
+	return isSpace(c)
+}
+
 func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
 	// Read the first line.
-	line, err := readLineSlice(r)
+	line, err := readLineSlice(r, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -301,19 +311,50 @@ func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
 		return line, nil
 	}
 
-	buf := trim(line)
+	line = append(line, '\r', '\n')
 
 	// Read continuation lines.
-	for skipSpace(r) > 0 {
-		line, err := readLineSlice(r)
+	for hasContinuationLine(r) {
+		line, err = readLineSlice(r, line)
 		if err != nil {
-			break
+			break // bufio will keep err until next read.
 		}
 
-		buf = append(buf, ' ')
-		buf = append(buf, trim(line)...)
+		line = append(line, '\r', '\n')
 	}
-	return buf, nil
+
+	return line, nil
+}
+
+func writeContinued(b *strings.Builder, l []byte) {
+	// Strip trailing \r, if any
+	if len(l) > 0 && l[len(l)-1] == '\r' {
+		l = l[:len(l)-1]
+	}
+	l = trim(l)
+	if len(l) == 0 {
+		return
+	}
+	if b.Len() > 0 {
+		b.WriteByte(' ')
+	}
+	b.Write(l)
+}
+
+// Strip newlines and spaces around newlines.
+func trimAroundNewlines(v []byte) string {
+	var b strings.Builder
+	for {
+		i := bytes.IndexByte(v, '\n')
+		if i < 0 {
+			writeContinued(&b, v)
+			break
+		}
+		writeContinued(&b, v[:i])
+		v = v[i+1:]
+	}
+
+	return b.String()
 }
 
 func readHeader(r *bufio.Reader) (Header2, error) {
@@ -321,7 +362,7 @@ func readHeader(r *bufio.Reader) (Header2, error) {
 
 	// The first line cannot start with a leading space.
 	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
-		line, err := readLineSlice(r)
+		line, err := readLineSlice(r, nil)
 		if err != nil {
 			return newHeader2(fs), err
 		}
@@ -335,37 +376,27 @@ func readHeader(r *bufio.Reader) (Header2, error) {
 			return newHeader2(fs), err
 		}
 
-		// Key ends at first colon; should not have trailing spaces
-		// but they appear in the wild, violating specs, so we remove
-		// them if present.
+		// Key ends at first colon; should not have trailing spaces but they
+		// appear in the wild, violating specs, so we remove them if present.
 		i := bytes.IndexByte(kv, ':')
 		if i < 0 {
 			return newHeader2(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
 		}
 
-		endKey := i
-		for endKey > 0 && isSpace(kv[endKey-1]) {
-			endKey--
-		}
+		key := textproto.CanonicalMIMEHeaderKey(string(trim(kv[:i])))
 
-		key := textproto.CanonicalMIMEHeaderKey(string(kv[:endKey]))
-
-		// As per RFC 7230 field-name is a token, tokens consist of one or more chars.
-		// We could return a ProtocolError here, but better to be liberal in what we
-		// accept, so if we get an empty key, skip it.
+		// As per RFC 7230 field-name is a token, tokens consist of one or more
+		// chars. We could return a an error here, but better to be liberal in
+		// what we accept, so if we get an empty key, skip it.
 		if key == "" {
 			continue
 		}
 
-		// Skip initial spaces in value.
 		i++ // skip colon
-		for i < len(kv) && isSpace(kv[i]) {
-			i++
-		}
+		v := kv[i:]
 
-		value := string(kv[i:])
-
-		fs = append(fs, newHeaderField(key, value))
+		value := trimAroundNewlines(v)
+		fs = append(fs, newHeaderField(key, value, kv))
 
 		if err != nil {
 			return newHeader2(fs), err
@@ -374,13 +405,20 @@ func readHeader(r *bufio.Reader) (Header2, error) {
 }
 
 func writeHeader2(w io.Writer, h Header2) error {
-	// TODO: wrap lines
+	// TODO: wrap lines when necessary
+
 	for i := len(h.l) - 1; i >= 0; i-- {
 		f := h.l[i]
-		if _, err := io.WriteString(w, f.k+": "+f.v+"\r\n"); err != nil {
+
+		if f.b == nil {
+			f.b = []byte(f.k + ": " + f.v + "\r\n")
+		}
+
+		if _, err := w.Write(f.b); err != nil {
 			return err
 		}
 	}
-	_, err := io.WriteString(w, "\r\n")
+
+	_, err := w.Write([]byte{'\r', '\n'})
 	return err
 }

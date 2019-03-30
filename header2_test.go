@@ -176,3 +176,25 @@ func TestWriteHeader(t *testing.T) {
 		t.Errorf("writeHeader() wrote invalid data: got \n%v\n but want \n%v", b.String(), testHeader)
 	}
 }
+
+// RFC says key shouldn't have trailing spaces, but those appear in the wild, so
+// we need to handle them.
+const testHeaderWithWhitespace = "Subject \t : \t Hey \r\n" +
+	" \t there\r\n" +
+	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
+
+func TestHeaderWithWhitespace(t *testing.T) {
+	h, err := readHeader(bufio.NewReader(strings.NewReader(testHeaderWithWhitespace)))
+	if err != nil {
+		t.Fatalf("readHeader() returned error: %v", err)
+	}
+
+	var b bytes.Buffer
+	if err := writeHeader2(&b, h); err != nil {
+		t.Fatalf("writeHeader() returned error: %v", err)
+	}
+
+	if b.String() != testHeaderWithWhitespace {
+		t.Errorf("writeHeader() wrote invalid data: got \n%v\n but want \n%v", b.String(), testHeaderWithWhitespace)
+	}
+}
