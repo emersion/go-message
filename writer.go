@@ -10,6 +10,14 @@ import (
 	"github.com/emersion/go-message/textproto"
 )
 
+// Writer writes message entities.
+//
+// If the message is not multipart, it should be used as a WriteCloser. Don't
+// forget to call Close.
+//
+// If the message is multipart, users can either use CreatePart to write child
+// parts or Write to directly pipe a multipart message. In any case, Close must
+// be called at the end.
 type Writer struct {
 	w  io.Writer
 	c  io.Closer
