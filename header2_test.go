@@ -189,6 +189,15 @@ func TestHeaderWithWhitespace(t *testing.T) {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
 
+	l := collectHeaderFields(h.Fields())
+	want := []string{
+		"Subject: Hey there",
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>",
+	}
+	if !reflect.DeepEqual(l, want) {
+		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
+
 	var b bytes.Buffer
 	if err := writeHeader2(&b, h); err != nil {
 		t.Fatalf("writeHeader() returned error: %v", err)
