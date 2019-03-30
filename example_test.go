@@ -2,12 +2,29 @@ package message_test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"strings"
 
 	"github.com/emersion/go-message"
 )
+
+func ExampleHeader2() {
+	var h message.Header2
+	h.Add("From", "<root@nsa.gov>")
+	h.Add("To", "<root@gchq.gov.uk>")
+	h.Set("Subject", "Tonight's dinner")
+
+	fmt.Println("From: ", h.Get("From"))
+	fmt.Println("Has Received: ", h.Has("Received"))
+
+	fmt.Println("Header fields:")
+	fields := h.Fields()
+	for fields.Next() {
+		fmt.Println("  ", fields.Key())
+	}
+}
 
 func ExampleRead() {
 	// Let's assume r is an io.Reader that contains a message.
