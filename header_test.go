@@ -14,7 +14,7 @@ func TestHeader(t *testing.T) {
 
 	var h Header
 	h.SetContentType(mediaType, mediaParams)
-	h.SetContentDescription(desc)
+	h.SetText("Content-Description", desc)
 	h.SetContentDisposition(disp, dispParams)
 
 	if gotMediaType, gotParams, err := h.ContentType(); err != nil {
@@ -25,7 +25,7 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Expected media params %v but got %v", mediaParams, gotParams)
 	}
 
-	if gotDesc, err := h.ContentDescription(); err != nil {
+	if gotDesc, err := h.Text("Content-Description"); err != nil {
 		t.Error("Expected no error when parsing content description, but got:", err)
 	} else if gotDesc != desc {
 		t.Errorf("Expected content description %q but got %q", desc, gotDesc)

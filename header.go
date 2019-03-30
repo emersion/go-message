@@ -67,16 +67,6 @@ func (h *Header) SetContentType(t string, params map[string]string) {
 	h.Set("Content-Type", formatHeaderWithParams(t, params))
 }
 
-// ContentDescription parses the Content-Description header field.
-func (h *Header) ContentDescription() (string, error) {
-	return decodeHeader(h.Get("Content-Description"))
-}
-
-// SetContentDescription parses the Content-Description header field.
-func (h *Header) SetContentDescription(desc string) {
-	h.Set("Content-Description", encodeHeader(desc))
-}
-
 // ContentDisposition parses the Content-Disposition header field, as defined in
 // RFC 2183.
 func (h *Header) ContentDisposition() (disp string, params map[string]string, err error) {
@@ -87,4 +77,15 @@ func (h *Header) ContentDisposition() (disp string, params map[string]string, er
 // defined in RFC 2183.
 func (h *Header) SetContentDisposition(disp string, params map[string]string) {
 	h.Set("Content-Disposition", formatHeaderWithParams(disp, params))
+}
+
+// Text parses a plaintext header field. The field charset is automatically
+// decoded to UTF-8.
+func (h *Header) Text(k string) (string, error) {
+	return decodeHeader(h.Get(k))
+}
+
+// SetText sets a plaintext header field.
+func (h *Header) SetText(k, v string) {
+	h.Set(k, encodeHeader(v))
 }
