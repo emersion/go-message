@@ -29,11 +29,11 @@ func ExampleWriter() {
 	}
 
 	// Create a text part
-	tw, err := mw.CreateText()
+	tw, err := mw.CreateInline()
 	if err != nil {
 		log.Fatal(err)
 	}
-	th := mail.NewTextHeader()
+	th := mail.NewInlineHeader()
 	th.Set("Content-Type", "text/plain")
 	w, err := tw.CreatePart(th)
 	if err != nil {
@@ -70,11 +70,11 @@ func TestWriter(t *testing.T) {
 	}
 
 	// Create a text part
-	tw, err := mw.CreateText()
+	tw, err := mw.CreateInline()
 	if err != nil {
 		t.Fatal(err)
 	}
-	th := mail.NewTextHeader()
+	th := mail.NewInlineHeader()
 	th.Set("Content-Type", "text/plain")
 	w, err := tw.CreatePart(th)
 	if err != nil {
@@ -100,7 +100,7 @@ func TestWriter(t *testing.T) {
 	testReader(t, &b)
 }
 
-func TestWriter_singleText(t *testing.T) {
+func TestWriter_singleInline(t *testing.T) {
 	var b bytes.Buffer
 
 	var h mail.Header
@@ -111,9 +111,9 @@ func TestWriter_singleText(t *testing.T) {
 	}
 
 	// Create a text part
-	th := mail.NewTextHeader()
+	th := mail.NewInlineHeader()
 	th.Set("Content-Type", "text/plain")
-	w, err := mw.CreateSingleText(th)
+	w, err := mw.CreateSingleInline(th)
 	if err != nil {
 		t.Fatal(err)
 	}

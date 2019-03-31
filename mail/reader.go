@@ -23,7 +23,7 @@ type PartHeader interface {
 	Set(key, value string)
 }
 
-// A Part is either a mail text or an attachment. Header is either a TextHeader
+// A Part is either a mail text or an attachment. Header is either a InlineHeader
 // or an AttachmentHeader.
 type Part struct {
 	Header PartHeader
@@ -101,8 +101,8 @@ func (r *Reader) NextPart() (*Part, error) {
 			mp := &Part{Body: p.Body}
 			t, _, _ := p.Header.ContentType()
 			disp, _, _ := p.Header.ContentDisposition()
-			if strings.HasPrefix(t, "text/") && disp != "attachment" {
-				mp.Header = &TextHeader{p.Header}
+			if disp == "inline" || (disp != "attachment" && strings.HasPrefix(t, "text/")) {
+				mp.Header = &InlineHeader{p.Header}
 			} else {
 				mp.Header = &AttachmentHeader{p.Header}
 			}

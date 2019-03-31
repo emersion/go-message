@@ -9,7 +9,8 @@ type AttachmentHeader struct {
 	message.Header
 }
 
-// NewAttachmentHeader creates a new AttachmentHeader.
+// NewAttachmentHeader creates a new AttachmentHeader. Content-Disposition and
+// Content-Transfer-Encoding header fields are managed automatically.
 func NewAttachmentHeader() AttachmentHeader {
 	var h AttachmentHeader
 	h.Set("Content-Disposition", "attachment")

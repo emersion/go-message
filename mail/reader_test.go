@@ -30,7 +30,7 @@ func ExampleReader() {
 		}
 
 		switch h := p.Header.(type) {
-		case *mail.TextHeader:
+		case *mail.InlineHeader:
 			b, _ := ioutil.ReadAll(p.Body)
 			log.Printf("Got text: %v\n", string(b))
 		case *mail.AttachmentHeader:
@@ -67,9 +67,9 @@ func testReader(t *testing.T, r io.Reader) {
 		var expectedBody string
 		switch i {
 		case 0:
-			h, ok := p.Header.(*mail.TextHeader)
+			h, ok := p.Header.(*mail.InlineHeader)
 			if !ok {
-				t.Fatalf("Expected a TextHeader, but got a %T", p.Header)
+				t.Fatalf("Expected a InlineHeader, but got a %T", p.Header)
 			}
 
 			if mediaType, _, _ := h.ContentType(); mediaType != "text/plain" {
@@ -126,8 +126,8 @@ func TestReader_nonMultipart(t *testing.T) {
 		t.Fatal("Expected no error while reading part, got:", err)
 	}
 
-	if _, ok := p.Header.(*mail.TextHeader); !ok {
-		t.Fatalf("Expected a TextHeader, but got a %T", p.Header)
+	if _, ok := p.Header.(*mail.InlineHeader); !ok {
+		t.Fatalf("Expected a InlineHeader, but got a %T", p.Header)
 	}
 
 	expectedBody := "Who are you?"
@@ -179,9 +179,9 @@ func TestReader_nested(t *testing.T) {
 
 		switch i {
 		case 0:
-			_, ok := p.Header.(*mail.TextHeader)
+			_, ok := p.Header.(*mail.InlineHeader)
 			if !ok {
-				t.Fatalf("Expected a TextHeader, but got a %T", p.Header)
+				t.Fatalf("Expected a InlineHeader, but got a %T", p.Header)
 			}
 
 			expectedBody := "I forgot."
