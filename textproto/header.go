@@ -173,8 +173,8 @@ func (fs *headerFields) Del() {
 // Fields iterates over all the header fields.
 //
 // The header may not be mutated while iterating, except using HeaderFields.Del.
-func (h Header) Fields() HeaderFields {
-	return &headerFields{&h, -1}
+func (h *Header) Fields() HeaderFields {
+	return &headerFields{h, -1}
 }
 
 type headerFieldsByKey struct {
@@ -231,8 +231,8 @@ func (fs *headerFieldsByKey) Del() {
 // FieldsByKey iterates over all fields having the specified key.
 //
 // The header may not be mutated while iterating, except using HeaderFields.Del.
-func (h Header) FieldsByKey(k string) HeaderFields {
-	return &headerFieldsByKey{&h, textproto.CanonicalMIMEHeaderKey(k), -1}
+func (h *Header) FieldsByKey(k string) HeaderFields {
+	return &headerFieldsByKey{h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
 
 func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
