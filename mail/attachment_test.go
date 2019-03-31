@@ -9,7 +9,7 @@ import (
 func TestAttachmentHeader_Filename_inContentType(t *testing.T) {
 	// Note: putting the attachment's filename in Content-Type is discouraged.
 
-	h := mail.NewAttachmentHeader()
+	var h mail.AttachmentHeader
 	h.Set("Content-Type", "text/plain; name=note.txt")
 
 	if filename, err := h.Filename(); err != nil {

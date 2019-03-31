@@ -33,7 +33,7 @@ func ExampleWriter() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	th := mail.NewInlineHeader()
+	var th mail.InlineHeader
 	th.Set("Content-Type", "text/plain")
 	w, err := tw.CreatePart(th)
 	if err != nil {
@@ -44,7 +44,7 @@ func ExampleWriter() {
 	tw.Close()
 
 	// Create an attachment
-	ah := mail.NewAttachmentHeader()
+	var ah mail.AttachmentHeader
 	ah.Set("Content-Type", "image/jpeg")
 	ah.SetFilename("picture.jpg")
 	w, err = mw.CreateAttachment(ah)
@@ -74,7 +74,7 @@ func TestWriter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	th := mail.NewInlineHeader()
+	var th mail.InlineHeader
 	th.Set("Content-Type", "text/plain")
 	w, err := tw.CreatePart(th)
 	if err != nil {
@@ -85,7 +85,7 @@ func TestWriter(t *testing.T) {
 	tw.Close()
 
 	// Create an attachment
-	ah := mail.NewAttachmentHeader()
+	var ah mail.AttachmentHeader
 	ah.Set("Content-Type", "text/plain")
 	ah.SetFilename("note.txt")
 	w, err = mw.CreateAttachment(ah)
@@ -111,7 +111,7 @@ func TestWriter_singleInline(t *testing.T) {
 	}
 
 	// Create a text part
-	th := mail.NewInlineHeader()
+	var th mail.InlineHeader
 	th.Set("Content-Type", "text/plain")
 	w, err := mw.CreateSingleInline(th)
 	if err != nil {
@@ -121,7 +121,7 @@ func TestWriter_singleInline(t *testing.T) {
 	w.Close()
 
 	// Create an attachment
-	ah := mail.NewAttachmentHeader()
+	var ah mail.AttachmentHeader
 	ah.Set("Content-Type", "text/plain")
 	ah.SetFilename("note.txt")
 	w, err = mw.CreateAttachment(ah)
@@ -132,6 +132,8 @@ func TestWriter_singleInline(t *testing.T) {
 	w.Close()
 
 	mw.Close()
+
+	t.Logf("Formatted message: \n%v", b.String())
 
 	testReader(t, &b)
 }

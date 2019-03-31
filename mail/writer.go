@@ -7,6 +7,28 @@ import (
 	"github.com/emersion/go-message"
 )
 
+func initInlineHeader(h *InlineHeader) {
+	h.Set("Content-Disposition", "inline")
+	if !h.Has("Content-Transfer-Encoding") {
+		t, _, _ := h.ContentType()
+		if strings.HasPrefix(t, "text/") {
+			h.Set("Content-Transfer-Encoding", "quoted-printable")
+		} else {
+			h.Set("Content-Transfer-Encoding", "base64")
+		}
+	}
+}
+
+func initAttachmentHeader(h *AttachmentHeader) {
+	disp, _, _ := h.ContentDisposition()
+	if disp != "attachment" {
+		h.Set("Content-Disposition", "attachment")
+	}
+	if !h.Has("Content-Transfer-Encoding") {
+		h.Set("Content-Transfer-Encoding", "base64")
+	}
+}
+
 // A Writer writes a mail message. A mail message contains one or more text
 // parts and zero or more attachments.
 type Writer struct {
@@ -38,31 +60,19 @@ func (w *Writer) CreateInline() (*InlineWriter, error) {
 	return &InlineWriter{mw}, nil
 }
 
-// setInlineContentTransferEncoding ensures the inline part header has a
-// properly set Content-Transfer-Encoding header field.
-func setInlineContentTransferEncoding(h *InlineHeader) {
-	if !h.Has("Content-Transfer-Encoding") {
-		t, _, _ := h.ContentType()
-		if strings.HasPrefix(t, "text/") {
-			h.Set("Content-Transfer-Encoding", "quoted-printable")
-		} else {
-			h.Set("Content-Transfer-Encoding", "base64")
-		}
-	}
-}
-
 // CreateSingleInline creates a new single text part with the provided header.
 // The body of the part should be written to the returned io.WriteCloser. Only
 // one single text part should be written, use CreateInline if you want multiple
 // text parts.
 func (w *Writer) CreateSingleInline(h InlineHeader) (io.WriteCloser, error) {
-	setInlineContentTransferEncoding(&h)
+	initInlineHeader(&h)
 	return w.mw.CreatePart(h.Header)
 }
 
 // CreateAttachment creates a new attachment with the provided header. The body
 // of the part should be written to the returned io.WriteCloser.
 func (w *Writer) CreateAttachment(h AttachmentHeader) (io.WriteCloser, error) {
+	initAttachmentHeader(&h)
 	return w.mw.CreatePart(h.Header)
 }
 
@@ -79,7 +89,7 @@ type InlineWriter struct {
 // CreatePart creates a new text part with the provided header. The body of the
 // part should be written to the returned io.WriteCloser.
 func (w *InlineWriter) CreatePart(h InlineHeader) (io.WriteCloser, error) {
-	setInlineContentTransferEncoding(&h)
+	initInlineHeader(&h)
 	return w.mw.CreatePart(h.Header)
 }
 

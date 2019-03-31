@@ -90,14 +90,14 @@ func (h *Header) Set(k, v string) {
 func (h *Header) Del(k string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
+	delete(h.m, k)
+
 	// Delete existing keys
 	for i := len(h.l) - 1; i >= 0; i-- {
 		if h.l[i].k == k {
 			h.l = append(h.l[:i], h.l[i+1:]...)
 		}
 	}
-
-	delete(h.m, k)
 }
 
 // Has checks whether the header has a field with the specified key.
