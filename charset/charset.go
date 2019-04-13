@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/emersion/go-message"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/japanese"
@@ -39,6 +40,10 @@ var charsets = map[string]encoding.Encoding{
 	"cp1251":           charmap.Windows1251,
 	"cp1252":           charmap.Windows1252,
 	"ansi_x3.110-1983": charmap.ISO8859_1,
+}
+
+func init() {
+	message.CharsetReader = Reader
 }
 
 // Reader returns an io.Reader that converts the provided charset to UTF-8.
