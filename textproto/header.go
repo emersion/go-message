@@ -36,6 +36,18 @@ type Header struct {
 	m map[string][]*headerField
 }
 
+func makeHeaderMap(fs []headerField) map[string][]*headerField {
+	if len(fs) == 0 {
+		return nil
+	}
+
+	m := make(map[string][]*headerField)
+	for i, f := range fs {
+		m[f.k] = append(m[f.k], &fs[i])
+	}
+	return m
+}
+
 func newHeader(fs []headerField) Header {
 	// Reverse order
 	for i := len(fs)/2 - 1; i >= 0; i-- {
@@ -44,13 +56,7 @@ func newHeader(fs []headerField) Header {
 	}
 
 	// Populate map
-	var m map[string][]*headerField
-	if len(fs) > 0 {
-		m = make(map[string][]*headerField)
-		for i, f := range fs {
-			m[f.k] = append(m[f.k], &fs[i])
-		}
-	}
+	m := makeHeaderMap(fs)
 
 	return Header{l: fs, m: m}
 }
@@ -104,6 +110,14 @@ func (h *Header) Del(k string) {
 func (h *Header) Has(k string) bool {
 	_, ok := h.m[textproto.CanonicalMIMEHeaderKey(k)]
 	return ok
+}
+
+// Copy creates an independent copy of the header.
+func (h *Header) Copy() Header {
+	l := make([]headerField, len(h.l))
+	copy(l, h.l)
+	m := makeHeaderMap(l)
+	return Header{l: l, m: m}
 }
 
 // HeaderFields iterates over header fields. Its cursor starts before the first
