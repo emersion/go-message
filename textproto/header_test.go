@@ -102,7 +102,7 @@ func TestHeader_Del(t *testing.T) {
 	}
 }
 
-func TestHeader_Fields_Del(t *testing.T) {
+func TestHeader_Fields_Del_multiple(t *testing.T) {
 	h := newTestHeader()
 
 	ok := false
@@ -119,9 +119,30 @@ func TestHeader_Fields_Del(t *testing.T) {
 	}
 
 	l := collectHeaderFields(h.FieldsByKey("Received"))
-	want := []string{"Received: from example.com by example.org"}
+	want := []string{"Received: from localhost by example.com"}
 	if !reflect.DeepEqual(l, want) {
 		t.Errorf("FieldsByKey(\"Received\") reported incorrect values after HeaderFields.Del(): got \n%#v\n but want \n%#v", l, want)
+	}
+}
+
+func TestHeader_Fields_Del_single(t *testing.T) {
+	h := newTestHeader()
+
+	ok := false
+	fields := h.Fields()
+	for fields.Next() {
+		if fields.Key() == "To" {
+			fields.Del()
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		t.Fatal("Fields() didn't yield \"To\"")
+	}
+
+	if h.FieldsByKey("To").Next() {
+		t.Errorf("FieldsByKey(\"To\") returned a non-empty set")
 	}
 }
 

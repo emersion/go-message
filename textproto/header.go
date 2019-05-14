@@ -16,8 +16,8 @@ type headerField struct {
 	v string
 }
 
-func newHeaderField(k, v string, b []byte) headerField {
-	return headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v, b: b}
+func newHeaderField(k, v string, b []byte) *headerField {
+	return &headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v, b: b}
 }
 
 // A Header represents the key-value pairs in a message header.
@@ -32,23 +32,23 @@ func newHeaderField(k, v string, b []byte) headerField {
 type Header struct {
 	// Fields are in reverse order so that inserting a new field at the top is
 	// cheap.
-	l []headerField
+	l []*headerField
 	m map[string][]*headerField
 }
 
-func makeHeaderMap(fs []headerField) map[string][]*headerField {
+func makeHeaderMap(fs []*headerField) map[string][]*headerField {
 	if len(fs) == 0 {
 		return nil
 	}
 
 	m := make(map[string][]*headerField)
 	for i, f := range fs {
-		m[f.k] = append(m[f.k], &fs[i])
+		m[f.k] = append(m[f.k], fs[i])
 	}
 	return m
 }
 
-func newHeader(fs []headerField) Header {
+func newHeader(fs []*headerField) Header {
 	// Reverse order
 	for i := len(fs)/2 - 1; i >= 0; i-- {
 		opp := len(fs) - 1 - i
@@ -70,8 +70,8 @@ func (h *Header) Add(k, v string) {
 		h.m = make(map[string][]*headerField)
 	}
 
-	h.l = append(h.l, newHeaderField(k, v, nil))
-	f := &h.l[len(h.l)-1]
+	f := newHeaderField(k, v, nil)
+	h.l = append(h.l, f)
 	h.m[k] = append(h.m[k], f)
 }
 
@@ -114,7 +114,7 @@ func (h *Header) Has(k string) bool {
 
 // Copy creates an independent copy of the header.
 func (h *Header) Copy() Header {
-	l := make([]headerField, len(h.l))
+	l := make([]*headerField, len(h.l))
 	copy(l, h.l)
 	m := makeHeaderMap(l)
 	return Header{l: l, m: m}
@@ -151,7 +151,7 @@ func (fs *headerFields) field() *headerField {
 	if fs.cur >= len(fs.h.l) {
 		panic("message: HeaderFields method called after Next returned false")
 	}
-	return &fs.h.l[len(fs.h.l)-fs.cur-1]
+	return fs.h.l[len(fs.h.l)-fs.cur-1]
 }
 
 func (fs *headerFields) Key() string {
@@ -225,7 +225,7 @@ func (fs *headerFieldsByKey) Del() {
 
 	ok := false
 	for i := range fs.h.l {
-		if f == &fs.h.l[i] {
+		if f == fs.h.l[i] {
 			ok = true
 			fs.h.l = append(fs.h.l[:i], fs.h.l[i+1:]...)
 			break
@@ -375,7 +375,7 @@ func trimAroundNewlines(v []byte) string {
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
 func ReadHeader(r *bufio.Reader) (Header, error) {
-	var fs []headerField
+	var fs []*headerField
 
 	// The first line cannot start with a leading space.
 	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
