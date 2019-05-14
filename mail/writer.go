@@ -7,8 +7,7 @@ import (
 	"github.com/emersion/go-message"
 )
 
-func initInlineHeader(h *InlineHeader) {
-	h.Set("Content-Disposition", "inline")
+func initInlineContentTransferEncoding(h *message.Header) {
 	if !h.Has("Content-Transfer-Encoding") {
 		t, _, _ := h.ContentType()
 		if strings.HasPrefix(t, "text/") {
@@ -17,6 +16,11 @@ func initInlineHeader(h *InlineHeader) {
 			h.Set("Content-Transfer-Encoding", "base64")
 		}
 	}
+}
+
+func initInlineHeader(h *InlineHeader) {
+	h.Set("Content-Disposition", "inline")
+	initInlineContentTransferEncoding(&h.Header)
 }
 
 func initAttachmentHeader(h *AttachmentHeader) {
@@ -45,6 +49,15 @@ func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	}
 
 	return &Writer{mw}, nil
+}
+
+// CreateSingleInlineWriter writes a mail header to w. The mail will contain a
+// single inline part. The body of the part should be written to the returned
+// io.WriteCloser. Only one single inline part should be written, use
+// CreateWriter if you want multiple parts.
+func CreateSingleInlineWriter(w io.Writer, header Header) (io.WriteCloser, error) {
+	initInlineContentTransferEncoding(&header.Header)
+	return message.CreateWriter(w, header.Header)
 }
 
 // CreateInline creates a InlineWriter. One or more parts representing the same
