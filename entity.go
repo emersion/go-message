@@ -3,7 +3,6 @@ package message
 import (
 	"bufio"
 	"io"
-	"mime/multipart"
 	"strings"
 
 	"github.com/emersion/go-message/textproto"
@@ -93,7 +92,7 @@ func (e *Entity) MultipartReader() MultipartReader {
 	if mb, ok := e.Body.(*multipartBody); ok {
 		return mb
 	}
-	return &multipartReader{multipart.NewReader(e.Body, e.mediaParams["boundary"])}
+	return &multipartReader{textproto.NewMultipartReader(e.Body, e.mediaParams["boundary"])}
 }
 
 // writeBodyTo writes this entity's body to w (without the header).

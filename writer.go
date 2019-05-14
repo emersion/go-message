@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"strings"
 
 	"github.com/emersion/go-message/textproto"
@@ -21,7 +20,7 @@ import (
 type Writer struct {
 	w  io.Writer
 	c  io.Closer
-	mw *multipart.Writer
+	mw *textproto.MultipartWriter
 }
 
 // createWriter creates a new Writer writing to w with the provided header.
@@ -31,7 +30,7 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 
 	mediaType, mediaParams, _ := header.ContentType()
 	if strings.HasPrefix(mediaType, "multipart/") {
-		ww.mw = multipart.NewWriter(ww.w)
+		ww.mw = textproto.NewMultipartWriter(ww.w)
 
 		// Do not set ww's io.Closer for now: if this is a multipart entity but
 		// CreatePart is not used (only Write is used), then the final boundary
@@ -114,7 +113,7 @@ func (w *Writer) CreatePart(header Header) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	pw, err := w.mw.CreatePart(headerToMap(header.Header))
+	pw, err := w.mw.CreatePart(header.Header)
 	if err != nil {
 		return nil, err
 	}

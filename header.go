@@ -2,7 +2,6 @@ package message
 
 import (
 	"mime"
-	stdtextproto "net/textproto"
 
 	"github.com/emersion/go-message/textproto"
 )
@@ -24,26 +23,6 @@ func formatHeaderWithParams(f string, params map[string]string) string {
 		encParams[k] = encodeHeader(v)
 	}
 	return mime.FormatMediaType(f, encParams)
-}
-
-func mapToHeader(m stdtextproto.MIMEHeader) textproto.Header {
-	var h textproto.Header
-	for k, vs := range m {
-		for i := len(vs) - 1; i >= 0; i-- {
-			h.Add(k, vs[i])
-		}
-	}
-	return h
-}
-
-// headerToMap converts a textproto.Header to a map. It looses information.
-func headerToMap(h textproto.Header) stdtextproto.MIMEHeader {
-	m := make(stdtextproto.MIMEHeader)
-	fields := h.Fields()
-	for fields.Next() {
-		m.Add(fields.Key(), fields.Value())
-	}
-	return m
 }
 
 // A Header represents the key-value pairs in a message header.

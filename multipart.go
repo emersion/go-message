@@ -2,7 +2,8 @@ package message
 
 import (
 	"io"
-	"mime/multipart"
+
+	"github.com/emersion/go-message/textproto"
 )
 
 // MultipartReader is an iterator over parts in a MIME multipart body.
@@ -18,7 +19,7 @@ type MultipartReader interface {
 }
 
 type multipartReader struct {
-	r *multipart.Reader
+	r *textproto.MultipartReader
 }
 
 // NextPart implements MultipartReader.
@@ -27,7 +28,7 @@ func (r *multipartReader) NextPart() (*Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(Header{mapToHeader(p.Header)}, p)
+	return New(Header{p.Header}, p)
 }
 
 // Close implements io.Closer.
