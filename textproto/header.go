@@ -144,14 +144,18 @@ func (fs *headerFields) Next() bool {
 	return fs.cur < len(fs.h.l)
 }
 
-func (fs *headerFields) field() *headerField {
+func (fs *headerFields) index() int {
 	if fs.cur < 0 {
 		panic("message: HeaderFields method called before Next")
 	}
 	if fs.cur >= len(fs.h.l) {
 		panic("message: HeaderFields method called after Next returned false")
 	}
-	return fs.h.l[len(fs.h.l)-fs.cur-1]
+	return len(fs.h.l)-fs.cur-1
+}
+
+func (fs *headerFields) field() *headerField {
+	return fs.h.l[fs.index()]
 }
 
 func (fs *headerFields) Key() string {
@@ -180,7 +184,7 @@ func (fs *headerFields) Del() {
 		panic("message: field not found in Header.m")
 	}
 
-	fs.h.l = append(fs.h.l[:fs.cur], fs.h.l[fs.cur+1:]...)
+	fs.h.l = append(fs.h.l[:fs.index()], fs.h.l[fs.index()+1:]...)
 	fs.cur--
 }
 
@@ -202,14 +206,18 @@ func (fs *headerFieldsByKey) Next() bool {
 	return fs.cur < len(fs.h.m[fs.k])
 }
 
-func (fs *headerFieldsByKey) field() *headerField {
+func (fs *headerFieldsByKey) index() int {
 	if fs.cur < 0 {
-		panic("message: HeaderFields.Key or Value called before Next")
+		panic("message: headerfields.key or value called before next")
 	}
 	if fs.cur >= len(fs.h.m[fs.k]) {
-		panic("message: HeaderFields.Key or Value called after Next returned false")
+		panic("message: headerfields.key or value called after next returned false")
 	}
-	return fs.h.m[fs.k][len(fs.h.m[fs.k])-fs.cur-1]
+	return len(fs.h.m[fs.k])-fs.cur-1
+}
+
+func (fs *headerFieldsByKey) field() *headerField {
+	return fs.h.m[fs.k][fs.index()]
 }
 
 func (fs *headerFieldsByKey) Key() string {
@@ -235,7 +243,7 @@ func (fs *headerFieldsByKey) Del() {
 		panic("message: field not found in Header.l")
 	}
 
-	fs.h.m[fs.k] = append(fs.h.m[fs.k][:fs.cur], fs.h.m[fs.k][fs.cur+1:]...)
+	fs.h.m[fs.k] = append(fs.h.m[fs.k][:fs.index()], fs.h.m[fs.k][fs.index()+1:]...)
 	if len(fs.h.m[fs.k]) == 0 {
 		delete(fs.h.m, fs.k)
 	}
