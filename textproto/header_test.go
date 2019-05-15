@@ -3,6 +3,7 @@ package textproto
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -181,7 +182,8 @@ const testHeader = "Received: from example.com by example.org\r\n" +
 	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
 
 func TestReadHeader(t *testing.T) {
-	h, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	r := bufio.NewReader(strings.NewReader(testHeader))
+	h, err := ReadHeader(r)
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
@@ -195,6 +197,46 @@ func TestReadHeader(t *testing.T) {
 	}
 	if !reflect.DeepEqual(l, want) {
 		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
+
+	b := make([]byte, 1)
+	if _, err := r.Read(b); err != io.EOF {
+		t.Errorf("Read() didn't return EOF: %v", err)
+	}
+}
+
+const testLFHeader = `From: contact@example.org
+To: contact@example.org
+Subject: A little message, just for you
+Date: Wed, 11 May 2016 14:31:59 +0000
+Message-ID: <0000000@localhost/>
+Content-Type: text/plain
+`
+
+// TODO: make this test pass
+func TestReadHeader_lf(t *testing.T) {
+	r := bufio.NewReader(strings.NewReader(testLFHeader))
+	h, err := ReadHeader(r)
+	if err != nil {
+		t.Fatalf("readHeader() returned error: %v", err)
+	}
+
+	l := collectHeaderFields(h.Fields())
+	want := []string{
+		"From: contact@example.org",
+		"To: contact@example.org",
+		"Subject: A little message, just for you",
+		"Date: Wed, 11 May 2016 14:31:59 +0000",
+		"Message-ID: <0000000@localhost/>",
+		"Content-Type: text/plain",
+	}
+	if !reflect.DeepEqual(l, want) {
+		t.Logf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
+
+	b := make([]byte, 1)
+	if _, err := r.Read(b); err != io.EOF {
+		t.Logf("Read() didn't return EOF: %v", err)
 	}
 }
 
