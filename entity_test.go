@@ -62,6 +62,10 @@ const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
 
 var testMultipartText = testMultipartHeader + testMultipartBody
 
+const testSingleText = "Content-Type: text/plain\r\n" +
+	"\r\n" +
+	"Message body"
+
 func testMultipart(t *testing.T, e *Entity) {
 	mr := e.MultipartReader()
 	if mr == nil {
@@ -127,6 +131,23 @@ func TestRead_multipart(t *testing.T) {
 	}
 
 	testMultipart(t, e)
+}
+
+func TestRead_single(t *testing.T) {
+	e, err := Read(strings.NewReader(testSingleText))
+	if err != nil {
+		t.Fatalf("Read() = %v", err)
+	}
+
+	b, err := ioutil.ReadAll(e.Body)
+	if err != nil {
+		t.Fatalf("ioutil.ReadAll() = %v", err)
+	}
+
+	expected := "Message body"
+	if string(b) != expected {
+		t.Fatalf("Expected body to be %q, got %q", expected, string(b))
+	}
 }
 
 func TestEntity_WriteTo(t *testing.T) {
