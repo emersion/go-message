@@ -8,6 +8,8 @@ import (
 	"net/textproto"
 	"regexp"
 	"strings"
+
+	"log"
 )
 
 type headerField struct {
@@ -260,6 +262,7 @@ func (h *Header) FieldsByKey(k string) HeaderFields {
 func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
+		log.Println("LINE", string(l), more)
 		if err != nil {
 			return nil, err
 		}
@@ -326,6 +329,7 @@ func hasContinuationLine(r *bufio.Reader) bool {
 func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
 	// Read the first line.
 	line, err := readLineSlice(r, nil)
+	log.Println("HEY", string(line), err)
 	if err != nil {
 		return nil, err
 	}
@@ -338,6 +342,7 @@ func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
 
 	// Read continuation lines.
 	for hasContinuationLine(r) {
+		log.Println("CONTINUATION")
 		line, err = readLineSlice(r, line)
 		if err != nil {
 			break // bufio will keep err until next read.
