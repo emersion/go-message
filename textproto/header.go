@@ -264,11 +264,6 @@ func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 			return nil, err
 		}
 
-		// Avoid the copy if the first call produced a full line.
-		if line == nil && !more {
-			return l, nil
-		}
-
 		line = append(line, l...)
 		if !more {
 			break

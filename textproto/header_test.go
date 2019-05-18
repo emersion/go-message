@@ -211,9 +211,9 @@ Subject: A little message, just for you
 Date: Wed, 11 May 2016 14:31:59 +0000
 Message-ID: <0000000@localhost/>
 Content-Type: text/plain
+
 `
 
-// TODO: make this test pass
 func TestReadHeader_lf(t *testing.T) {
 	r := bufio.NewReader(strings.NewReader(testLFHeader))
 	h, err := ReadHeader(r)
@@ -227,16 +227,16 @@ func TestReadHeader_lf(t *testing.T) {
 		"To: contact@example.org",
 		"Subject: A little message, just for you",
 		"Date: Wed, 11 May 2016 14:31:59 +0000",
-		"Message-ID: <0000000@localhost/>",
+		"Message-Id: <0000000@localhost/>",
 		"Content-Type: text/plain",
 	}
 	if !reflect.DeepEqual(l, want) {
-		t.Logf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
 	}
 
 	b := make([]byte, 1)
 	if _, err := r.Read(b); err != io.EOF {
-		t.Logf("Read() didn't return EOF: %v", err)
+		t.Errorf("Read() didn't return EOF: %v", err)
 	}
 }
 
