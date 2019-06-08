@@ -284,32 +284,6 @@ func TestHeaderWithWhitespace(t *testing.T) {
 	}
 }
 
-const testHeaderWithOnlyWhitespace = "\r\r\n" + "From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
-
-func TestHeaderWithOnlyWhitespace(t *testing.T) {
-	h, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeaderWithOnlyWhitespace)))
-	if err != nil {
-		t.Fatalf("readHeader() returned error: %v", err)
-	}
-
-	l := collectHeaderFields(h.Fields())
-	want := []string{
-		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>",
-	}
-	if !reflect.DeepEqual(l, want) {
-		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
-	}
-
-	var b bytes.Buffer
-	if err := WriteHeader(&b, h); err != nil {
-		t.Fatalf("writeHeader() returned error: %v", err)
-	}
-
-	if b.String() != testHeaderWithWhitespace {
-		t.Errorf("writeHeader() wrote invalid data: got \n%v\n but want \n%v", b.String(), testHeaderWithOnlyWhitespace)
-	}
-}
-
 var formatHeaderFieldTests = []struct {
 	k, v      string
 	formatted string
