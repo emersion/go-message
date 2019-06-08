@@ -151,7 +151,7 @@ func (fs *headerFields) index() int {
 	if fs.cur >= len(fs.h.l) {
 		panic("message: HeaderFields method called after Next returned false")
 	}
-	return len(fs.h.l)-fs.cur-1
+	return len(fs.h.l) - fs.cur - 1
 }
 
 func (fs *headerFields) field() *headerField {
@@ -213,7 +213,7 @@ func (fs *headerFieldsByKey) index() int {
 	if fs.cur >= len(fs.h.m[fs.k]) {
 		panic("message: headerfields.key or value called after next returned false")
 	}
-	return len(fs.h.m[fs.k])-fs.cur-1
+	return len(fs.h.m[fs.k]) - fs.cur - 1
 }
 
 func (fs *headerFieldsByKey) field() *headerField {
@@ -392,6 +392,10 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 
 	for {
 		kv, err := readContinuedLineSlice(r)
+
+		kv = bytes.ReplaceAll(kv, []byte("\r"), []byte(""))
+		kv = bytes.ReplaceAll(kv, []byte("\n"), []byte(""))
+
 		if len(kv) == 0 {
 			return newHeader(fs), err
 		}
