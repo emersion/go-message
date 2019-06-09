@@ -25,6 +25,23 @@ func formatHeaderWithParams(f string, params map[string]string) string {
 	return mime.FormatMediaType(f, encParams)
 }
 
+// HeaderFields iterates over header fields.
+type HeaderFields interface {
+	textproto.HeaderFields
+
+	// Text parses the value of the current field as plaintext. The field
+	// charset is decoded to UTF-8.
+	Text() (string, error)
+}
+
+type headerFields struct {
+	textproto.HeaderFields
+}
+
+func (hf *headerFields) Text() (string, error) {
+	return decodeHeader(hf.Value())
+}
+
 // A Header represents the key-value pairs in a message header.
 type Header struct {
 	textproto.Header
@@ -67,4 +84,18 @@ func (h *Header) Text(k string) (string, error) {
 // SetText sets a plaintext header field.
 func (h *Header) SetText(k, v string) {
 	h.Set(k, encodeHeader(v))
+}
+
+// Fields iterates over all the header fields.
+//
+// The header may not be mutated while iterating, except using HeaderFields.Del.
+func (h *Header) Fields() HeaderFields {
+	return &headerFields{h.Header.Fields()}
+}
+
+// FieldsByKey iterates over all fields having the specified key.
+//
+// The header may not be mutated while iterating, except using HeaderFields.Del.
+func (h *Header) FieldsByKey(k string) HeaderFields {
+	return &headerFields{h.Header.FieldsByKey(k)}
 }
