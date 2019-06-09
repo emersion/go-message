@@ -30,7 +30,8 @@ type HeaderFields interface {
 	textproto.HeaderFields
 
 	// Text parses the value of the current field as plaintext. The field
-	// charset is decoded to UTF-8.
+	// charset is decoded to UTF-8. If the header field's charset is unknown,
+	// the raw field value is returned and the error verifies IsUnknownCharset.
 	Text() (string, error)
 }
 
@@ -76,7 +77,8 @@ func (h *Header) SetContentDisposition(disp string, params map[string]string) {
 }
 
 // Text parses a plaintext header field. The field charset is automatically
-// decoded to UTF-8.
+// decoded to UTF-8. If the header field's charset is unknown, the raw field
+// value is returned and the error verifies IsUnknownCharset.
 func (h *Header) Text(k string) (string, error) {
 	return decodeHeader(h.Get(k))
 }
