@@ -49,8 +49,8 @@ func init() {
 // Reader returns an io.Reader that converts the provided charset to UTF-8.
 func Reader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
-	// "ascii" is not in the spec but is common
-	if charset == "utf-8" || charset == "us-ascii" || charset == "ascii" {
+	// "ascii" and "utf8" are not in the spec but are common
+	if charset == "utf-8" || charset == "utf8" || charset == "us-ascii" || charset == "ascii" {
 		return input, nil
 	}
 	if enc, ok := charsets[charset]; ok {
