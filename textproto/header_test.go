@@ -304,6 +304,11 @@ var formatHeaderFieldTests = []struct {
 		formatted: "Subject: This is        yet          \t  another    subject          \t       \r\n            with many         whitespace      characters\r\n",
 	},
 	{
+		k:         "In-Reply-To",
+		v:         "<CAOzTU0ikmAnr1ebhLEfks2crdHcotR-cXeJ-7ySd4X4VJ-B2fg@mail.gmail.com>",
+		formatted: "In-Reply-To: <CAOzTU0ikmAnr1ebhLEfks2crdHcotR-cXeJ-7ySd4X4VJ-B2fg@mail.gmail.com>\r\n",
+	},
+	{
 		k:         "Subject",
 		v:         "=?utf-8?q?=E2=80=9CDeveloper_reads_customer_requested_change.=E2=80=9D=0A?= =?utf-8?q?=0ACaravaggio=0A=0AOil_on...?=",
 		formatted: "Subject: =?utf-8?q?=E2=80=9CDeveloper_reads_customer_requested_change.\r\n =E2=80=9D=0A?= =?utf-8?q?=0ACaravaggio=0A=0AOil_on...?=\r\n",
@@ -325,7 +330,7 @@ var formatHeaderFieldTests = []struct {
 	},
 	{
 		k:         "DKIM-Signature",
-		v:         "v=1; h=From; d=example.org; b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6xNAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrIx0orEtZV4bmp/YzhwvcubU4=\r\n",
+		v:         "v=1; h=From; d=example.org; b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI x0orEtZV4bmp/YzhwvcubU4=\r\n",
 		formatted: "Dkim-Signature: v=1; h=From; d=example.org;\r\n b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x\r\n NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI\r\n x0orEtZV4bmp/YzhwvcubU4=\r\n",
 	},
 	{

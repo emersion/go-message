@@ -424,10 +424,74 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 	}
 }
 
-const maxHeaderLen = 76
-
 // Regexp that detects Quoted Printable (QP) characters
 var qpReg = regexp.MustCompile("(=[0-9A-Z]{2,2})+")
+
+func foldLine(v string, maxlen int) (line, next string, ok bool) {
+	ok = true
+
+	// We'll need to fold before maxlen
+	foldBefore := maxlen + 1
+	foldAt := len(v)
+
+	var folding string
+	if foldBefore > len(v) {
+		// We reached the end of the string
+		if v[len(v)-1] != '\n' {
+			// If there isn't already a trailing CRLF, insert one
+			folding = "\r\n"
+		}
+	} else {
+		// Find the last QP character before limit
+		foldAtQP := qpReg.FindAllStringIndex(v[:foldBefore], -1)
+		// Find the closest whitespace before maxlen
+		foldAtEOL := strings.LastIndexAny(v[:foldBefore], " \t\n")
+
+		// Fold at the latest whitespace by default
+		foldAt = foldAtEOL
+
+		// if there are QP characters in the string
+		if len(foldAtQP) > 0 {
+			// Get the start index of the last QP character
+			foldAtQPLastIndex := foldAtQP[len(foldAtQP)-1][0]
+			if foldAtQPLastIndex > foldAt {
+				// Fold at the latest QP character if there are no whitespaces
+				// after it and before line length limit
+				foldAt = foldAtQPLastIndex
+			}
+		}
+
+		if foldAt == 0 {
+			// The whitespace we found was the previous folding WSP
+			foldAt = foldBefore - 1
+		} else if foldAt < 0 {
+			// We didn't find any whitespace, we have to insert one
+			foldAt = foldBefore - 2
+		}
+
+		switch v[foldAt] {
+		case ' ', '\t':
+			if v[foldAt-1] != '\n' {
+				folding = "\r\n" // The next char will be a WSP, don't need to insert one
+			}
+		case '\n':
+			folding = "" // There is already a CRLF, nothing to do
+		default:
+			// Another char, we need to insert CRLF + WSP. This will insert an
+			// extra space in the string, so this should be avoided if
+			// possible.
+			folding = "\r\n "
+			ok = len(foldAtQP) > 0
+		}
+	}
+
+	return v[:foldAt] + folding, v[foldAt:], ok
+}
+
+const (
+	preferredHeaderLen = 76
+	maxHeaderLen = 998
+)
 
 // formatHeaderField formats a header field, ensuring each line is no longer
 // than 76 characters. It tries to fold lines at whitespace characters if
@@ -442,63 +506,21 @@ func formatHeaderField(k, v string) string {
 
 	first := true
 	for len(v) > 0 {
-		maxlen := maxHeaderLen
+		// If this is the first line, substract the length of the key
+		keylen := 0
 		if first {
-			maxlen -= len(s)
+			keylen = len(s)
 		}
 
-		// We'll need to fold before i
-		foldBefore := maxlen + 1
-		foldAt := len(v)
-
-		var folding string
-		if foldBefore > len(v) {
-			// We reached the end of the string
-			if v[len(v)-1] != '\n' {
-				// If there isn't already a trailing CRLF, insert one
-				folding = "\r\n"
-			}
-		} else {
-			// Find the last QP character before limit
-			foldAtQP := qpReg.FindAllStringIndex(v[:foldBefore], -1)
-			// Find the closest whitespace before i
-			foldAtEOL := strings.LastIndexAny(v[:foldBefore], " \t\n")
-
-			// Fold at the latest whitespace by default
-			foldAt = foldAtEOL
-
-			// if there are QP characters in the string
-			if len(foldAtQP) > 0 {
-				// Get the start index of the last QP character
-				foldAtQPLastIndex := foldAtQP[len(foldAtQP)-1][0]
-				if foldAtQPLastIndex > foldAt {
-					// Fold at the latest QP character if there are no whitespaces after it and before line hard limit
-					foldAt = foldAtQPLastIndex
-				}
-			}
-
-			if foldAt == 0 {
-				// The whitespace we found was the previous folding WSP
-				foldAt = foldBefore - 1
-			} else if foldAt < 0 {
-				// We didn't find any whitespace, we have to insert one
-				foldAt = foldBefore - 2
-			}
-
-			switch v[foldAt] {
-			case ' ', '\t':
-				if v[foldAt-1] != '\n' {
-					folding = "\r\n" // The next char will be a WSP, don't need to insert one
-				}
-			case '\n':
-				folding = "" // There is already a CRLF, nothing to do
-			default:
-				folding = "\r\n " // Another char, we need to insert CRLF + WSP
-			}
+		// First try with a soft limit
+		l, next, ok := foldLine(v, preferredHeaderLen - keylen)
+		if !ok {
+			// Folding failed to preserve the original header field value. Try
+			// with a larger, hard limit.
+			l, next, _ = foldLine(v, maxHeaderLen - keylen)
 		}
-
-		s += v[:foldAt] + folding
-		v = v[foldAt:]
+		v = next
+		s += l
 		first = false
 	}
 
