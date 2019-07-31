@@ -31,8 +31,7 @@ var CharsetReader func(charset string, input io.Reader) (io.Reader, error)
 // charsetReader calls CharsetReader if non-nil.
 func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
-	// "ascii" is not in the spec but is common
-	if charset == "utf-8" || charset == "us-ascii" || charset == "ascii" {
+	if charset == "utf-8" || charset == "us-ascii" {
 		return input, nil
 	}
 	if CharsetReader != nil {
