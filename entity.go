@@ -27,19 +27,30 @@ type Entity struct {
 func New(header Header, body io.Reader) (*Entity, error) {
 	var err error
 
-	enc := header.Get("Content-Transfer-Encoding")
-	if decoded, encErr := encodingReader(enc, body); encErr != nil {
-		err = unknownEncodingError{encErr}
-	} else {
-		body = decoded
+	mediaType, mediaParams, _ := header.ContentType()
+
+	// QUIRK: RFC 2045 section 6.4 specifies that multipart messages can't have
+	// a Content-Transfer-Encoding other than "7bit", "8bit" or "binary".
+	// However some messages in the wild are non-conformant and have it set to
+	// e.g. "quoted-printable". So we just ignore it for multipart.
+	// See https://github.com/emersion/go-message/issues/48
+	if !strings.HasPrefix(mediaType, "multipart/") {
+		enc := header.Get("Content-Transfer-Encoding")
+		if decoded, encErr := encodingReader(enc, body); encErr != nil {
+			err = unknownEncodingError{encErr}
+		} else {
+			body = decoded
+		}
 	}
 
-	mediaType, mediaParams, _ := header.ContentType()
-	if ch, ok := mediaParams["charset"]; ok {
-		if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
-			err = unknownCharsetError{charsetErr}
-		} else {
-			body = converted
+	// RFC 2046 section 4.1.2: charset only applies to text/*
+	if strings.HasPrefix(mediaType, "text/") {
+		if ch, ok := mediaParams["charset"]; ok {
+			if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
+				err = unknownCharsetError{charsetErr}
+			} else {
+				body = converted
+			}
 		}
 	}
 
