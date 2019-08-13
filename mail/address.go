@@ -1,8 +1,11 @@
 package mail
 
 import (
+	"mime"
 	"net/mail"
 	"strings"
+
+	"github.com/emersion/go-message"
 )
 
 // Address represents a single mail address.
@@ -16,7 +19,10 @@ func (a *Address) String() string {
 }
 
 func parseAddressList(s string) ([]*Address, error) {
-	list, err := mail.ParseAddressList(s)
+	parser := mail.AddressParser{
+		&mime.WordDecoder{message.CharsetReader},
+	}
+	list, err := parser.ParseList(s)
 	if err != nil {
 		return nil, err
 	}
