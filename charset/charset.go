@@ -49,7 +49,8 @@ func init() {
 // Reader returns an io.Reader that converts the provided charset to UTF-8.
 func Reader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
-	// QUIRK: "ascii" and "utf8" are not in the spec but are common
+	// QUIRK: "ascii" and "utf8" are not in the spec but are common. The
+	// names ANSI_X3.4-{1968,1986} are historical and recognized as aliases
 	if charset == "utf-8" || charset == "utf8" || charset == "us-ascii" || charset == "ascii" || strings.HasPrefix(charset, "ansi_x3.4-") {
 		return input, nil
 	}
