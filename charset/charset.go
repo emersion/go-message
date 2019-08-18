@@ -50,7 +50,7 @@ func init() {
 func Reader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(charset)
 	// QUIRK: "ascii" and "utf8" are not in the spec but are common
-	if charset == "utf-8" || charset == "utf8" || charset == "us-ascii" || charset == "ascii" {
+	if charset == "utf-8" || charset == "utf8" || charset == "us-ascii" || charset == "ascii" || strings.HasPrefix(charset, "ansi_x3.4-") {
 		return input, nil
 	}
 	if enc, ok := charsets[charset]; ok {
