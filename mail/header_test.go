@@ -42,3 +42,20 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Expected header subject to be %v, but got %v", subject, got)
 	}
 }
+
+func TestCFWSDates(t *testing.T) {
+	tc := []string{
+		"Mon, 22 Jul 2019 13:57:29 -0500 (GMT-05:00)",
+		"Mon, 22 Jul 2019 13:57:29 -0500",
+		"Mon, 2 Jan 06 15:04:05 MST (Some random stuff)",
+		"Mon, 2 Jan 06 15:04:05 MST",
+	}
+	var h mail.Header
+	for _, tt := range tc {
+		h.Set("Date", tt)
+		_, err := h.Date()
+		if err != nil {
+			t.Errorf("Failed to parse time %q: %v", tt, err)
+		}
+	}
+}

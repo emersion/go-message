@@ -2,12 +2,18 @@ package mail
 
 import (
 	"net/mail"
+	"regexp"
 	"time"
 
 	"github.com/emersion/go-message"
 )
 
 const dateLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
+
+// TODO: this is a blunt way to strip any trailing CFWS (comment). A sharper
+// one would strip multiple CFWS, and only if really valid according to
+// RFC5322.
+var commentRE = regexp.MustCompile(`[ \t]+\(.*\)$`)
 
 // A Header is a mail header.
 type Header struct {
@@ -31,7 +37,10 @@ func (h *Header) SetAddressList(key string, addrs []*Address) {
 
 // Date parses the Date header field.
 func (h *Header) Date() (time.Time, error) {
-	return mail.ParseDate(h.Get("Date"))
+	//TODO: remove this once https://go-review.googlesource.com/c/go/+/117596/
+	// is merged
+	date := commentRE.ReplaceAllString(h.Get("Date"), "")
+	return mail.ParseDate(date)
 }
 
 // SetDate formats the Date header field.
