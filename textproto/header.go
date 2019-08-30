@@ -120,6 +120,11 @@ func (h *Header) Copy() Header {
 	return Header{l: l, m: m}
 }
 
+// Len returns the amount of fields in the header.
+func (h *Header) Len() int {
+	return len(h.l)
+}
+
 // HeaderFields iterates over header fields. Its cursor starts before the first
 // field of the header. Use Next to advance from field to field.
 type HeaderFields interface {
