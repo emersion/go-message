@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime"
 )
 
 var emptyParams = make(map[string]string)
@@ -31,9 +30,6 @@ type Part struct {
 
 	mr *MultipartReader
 
-	disposition       string
-	dispositionParams map[string]string
-
 	// r is either a reader directly reading from mr
 	r io.Reader
 
@@ -41,15 +37,6 @@ type Part struct {
 	total   int64 // total data bytes read already
 	err     error // error to return when n == 0
 	readErr error // read error observed from mr.bufReader
-}
-
-func (p *Part) parseContentDisposition() {
-	v := p.Header.Get("Content-Disposition")
-	var err error
-	p.disposition, p.dispositionParams, err = mime.ParseMediaType(v)
-	if err != nil {
-		p.dispositionParams = emptyParams
-	}
 }
 
 // NewMultipartReader creates a new multipart reader reading from r using the
