@@ -41,7 +41,7 @@ func makeHeaderMap(fs []*headerField) map[string][]*headerField {
 		return nil
 	}
 
-	m := make(map[string][]*headerField)
+	m := make(map[string][]*headerField, len(fs))
 	for i, f := range fs {
 		m[f.k] = append(m[f.k], fs[i])
 	}
@@ -156,7 +156,7 @@ func (fs *headerFields) index() int {
 	if fs.cur >= len(fs.h.l) {
 		panic("message: HeaderFields method called after Next returned false")
 	}
-	return len(fs.h.l)-fs.cur-1
+	return len(fs.h.l) - fs.cur - 1
 }
 
 func (fs *headerFields) field() *headerField {
@@ -218,7 +218,7 @@ func (fs *headerFieldsByKey) index() int {
 	if fs.cur >= len(fs.h.m[fs.k]) {
 		panic("message: headerfields.key or value called after next returned false")
 	}
-	return len(fs.h.m[fs.k])-fs.cur-1
+	return len(fs.h.m[fs.k]) - fs.cur - 1
 }
 
 func (fs *headerFieldsByKey) field() *headerField {
@@ -324,8 +324,9 @@ func hasContinuationLine(r *bufio.Reader) bool {
 }
 
 func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
-	// Read the first line.
-	line, err := readLineSlice(r, nil)
+	// Read the first line. We preallocate slice that it enough
+	// for most fields.
+	line, err := readLineSlice(r, make([]byte, 0, 256))
 	if err != nil {
 		return nil, err
 	}
@@ -367,6 +368,7 @@ func writeContinued(b *strings.Builder, l []byte) {
 // Strip newlines and spaces around newlines.
 func trimAroundNewlines(v []byte) string {
 	var b strings.Builder
+	b.Grow(len(v))
 	for {
 		i := bytes.IndexByte(v, '\n')
 		if i < 0 {
@@ -383,7 +385,7 @@ func trimAroundNewlines(v []byte) string {
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
 func ReadHeader(r *bufio.Reader) (Header, error) {
-	var fs []*headerField
+	fs := make([]*headerField, 0, 32)
 
 	// The first line cannot start with a leading space.
 	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
@@ -495,7 +497,7 @@ func foldLine(v string, maxlen int) (line, next string, ok bool) {
 
 const (
 	preferredHeaderLen = 76
-	maxHeaderLen = 998
+	maxHeaderLen       = 998
 )
 
 // formatHeaderField formats a header field, ensuring each line is no longer
@@ -518,11 +520,11 @@ func formatHeaderField(k, v string) string {
 		}
 
 		// First try with a soft limit
-		l, next, ok := foldLine(v, preferredHeaderLen - keylen)
+		l, next, ok := foldLine(v, preferredHeaderLen-keylen)
 		if !ok {
 			// Folding failed to preserve the original header field value. Try
 			// with a larger, hard limit.
-			l, next, _ = foldLine(v, maxHeaderLen - keylen)
+			l, next, _ = foldLine(v, maxHeaderLen-keylen)
 		}
 		v = next
 		s += l
