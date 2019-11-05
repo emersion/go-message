@@ -36,6 +36,7 @@ var charsets = map[string]encoding.Encoding{
 	"windows-1250":     charmap.Windows1250,
 	"windows-1251":     charmap.Windows1251,
 	"windows-1252":     charmap.Windows1252,
+	"windows-1257":     charmap.Windows1257,
 	"cp1250":           charmap.Windows1250,
 	"cp1251":           charmap.Windows1251,
 	"cp1252":           charmap.Windows1252,
