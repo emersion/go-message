@@ -12,6 +12,7 @@ import (
 
 type headerField struct {
 	b []byte // Raw header field, including whitespace
+
 	k string
 	v string
 }
@@ -541,11 +542,14 @@ func WriteHeader(w io.Writer, h Header) error {
 	for i := len(h.l) - 1; i >= 0; i-- {
 		f := h.l[i]
 
-		if f.b == nil {
-			f.b = []byte(formatHeaderField(f.k, f.v))
+		var b []byte
+		if f.b != nil {
+			b = f.b
+		} else {
+			b = []byte(formatHeaderField(f.k, f.v))
 		}
 
-		if _, err := w.Write(f.b); err != nil {
+		if _, err := w.Write(b); err != nil {
 			return err
 		}
 	}
