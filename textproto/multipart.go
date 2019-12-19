@@ -344,7 +344,6 @@ func skipLWSPChar(b []byte) []byte {
 	return b
 }
 
-
 // A MultipartWriter generates multipart messages.
 type MultipartWriter struct {
 	w        io.Writer
@@ -472,4 +471,3 @@ func (p *part) Write(d []byte) (n int, err error) {
 	}
 	return
 }
-

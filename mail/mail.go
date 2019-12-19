@@ -10,9 +10,9 @@ package mail
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"crypto/rand"
 	"os"
 	"time"
 
