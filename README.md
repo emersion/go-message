@@ -14,7 +14,8 @@ A Go library for the Internet Message Format. It implements:
 ## Features
 
 * Streaming API
-* Automatic encoding and charset handling
+* Automatic encoding and charset handling (to decode all charsets, add
+  `import _ "github.com/emersion/go-message/charset"` to your application)
 * A [`mail`](https://godoc.org/github.com/emersion/go-message/mail) subpackage
   to read and write mail messages
 * DKIM-friendly
