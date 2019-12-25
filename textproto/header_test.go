@@ -205,6 +205,35 @@ func TestReadHeader(t *testing.T) {
 	}
 }
 
+const testHeaderWithoutBody = "Received: from example.com by example.org\r\n" +
+	"Received: from localhost by example.com\r\n" +
+	"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
+	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n"
+
+func TestReadHeaderWithoutBody(t *testing.T) {
+	r := bufio.NewReader(strings.NewReader(testHeaderWithoutBody))
+	h, err := ReadHeader(r)
+	if err != nil {
+		t.Fatalf("readHeader() returned error: %v", err)
+	}
+
+	l := collectHeaderFields(h.Fields())
+	want := []string{
+		"Received: from example.com by example.org",
+		"Received: from localhost by example.com",
+		"To: Taki Tachibana <taki.tachibana@example.org>",
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>",
+	}
+	if !reflect.DeepEqual(l, want) {
+		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
+
+	b := make([]byte, 1)
+	if _, err := r.Read(b); err != io.EOF {
+		t.Errorf("Read() didn't return EOF: %v", err)
+	}
+}
+
 const testLFHeader = `From: contact@example.org
 To: contact@example.org
 Subject: A little message, just for you

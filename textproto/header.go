@@ -401,6 +401,9 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 	for {
 		kv, err := readContinuedLineSlice(r)
 		if len(kv) == 0 {
+			if err == io.EOF {
+				err = nil
+			}
 			return newHeader(fs), err
 		}
 
