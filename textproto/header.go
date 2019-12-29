@@ -77,13 +77,13 @@ func (h *Header) AddRaw(kv []byte) {
 		panic("textproto: Header.AddRaw: missing colon")
 	}
 	k := textproto.CanonicalMIMEHeaderKey(string(trim(kv[:colon])))
-	v := kv[colon:]
+	v := trimAroundNewlines(kv[colon+1:])
 
 	if h.m == nil {
 		h.m = make(map[string][]*headerField)
 	}
 
-	f := newHeaderField(k, string(v), kv)
+	f := newHeaderField(k, v, kv)
 	h.l = append(h.l, f)
 	h.m[k] = append(h.m[k], f)
 }
