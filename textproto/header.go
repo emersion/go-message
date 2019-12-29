@@ -62,10 +62,12 @@ func newHeader(fs []*headerField) Header {
 	return Header{l: fs, m: m}
 }
 
-// AddRaw adds the raw key, value pair to the header. The supplied string
-// should be a complete field in the Key: Value form including trailing CRLF.
-// No changes are made to it and it will be inserted into WriteHeader output as
-// is.
+// AddRaw adds the raw key, value pair to the header.
+//
+// The supplied byte slice should be a complete field in the "Key: Value" form
+// including trailing CRLF. If there is no comma in the input - AddRaw panics.
+// No changes are made to kv contents and it will be copied into WriteHeader
+// output as is.
 //
 // kv is directly added to the underlying structure and therefore should not be
 // modified after the AddRaw call.
