@@ -274,7 +274,7 @@ func TestHeader_AddRaw(t *testing.T) {
  I=; c=simple/simple; d=example.org; h=Subject:To:From; s=default; t=1577562184; v=1; b=;` + "\r\n"
 
 	h := newTestHeader()
-	h.AddRaw(dkimLine)
+	h.AddRaw([]byte(dkimLine))
 
 	var b bytes.Buffer
 	if err := WriteHeader(&b, h); err != nil {

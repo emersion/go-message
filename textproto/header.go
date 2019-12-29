@@ -66,19 +66,22 @@ func newHeader(fs []*headerField) Header {
 // should be a complete field in the Key: Value form including trailing CRLF.
 // No changes are made to it and it will be inserted into WriteHeader output as
 // is.
-func (h *Header) AddRaw(kv string) {
-	colon := strings.IndexByte(kv, ':')
+//
+// kv is directly added to the underlying structure and therefore should not be
+// modified after the AddRaw call.
+func (h *Header) AddRaw(kv []byte) {
+	colon := bytes.IndexByte(kv, ':')
 	if colon == -1 {
 		panic("textproto: Header.AddRaw: missing colon")
 	}
-	k := textproto.CanonicalMIMEHeaderKey(string(trim([]byte(kv[:colon]))))
+	k := textproto.CanonicalMIMEHeaderKey(string(trim(kv[:colon])))
 	v := kv[colon:]
 
 	if h.m == nil {
 		h.m = make(map[string][]*headerField)
 	}
 
-	f := newHeaderField(k, v, []byte(kv))
+	f := newHeaderField(k, string(v), kv)
 	h.l = append(h.l, f)
 	h.m[k] = append(h.m[k], f)
 }
