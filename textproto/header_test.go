@@ -269,6 +269,34 @@ func TestReadHeader_lf(t *testing.T) {
 	}
 }
 
+func TestHeader_AddRaw(t *testing.T) {
+	dkimLine := `DKIM-Signature: a=rsa-sha256; bh=uI/rVH7mLBSWkJVvQYKz3TbpdI2BLZWTIMKcuo0KHO
+ I=; c=simple/simple; d=example.org; h=Subject:To:From; s=default; t=1577562184; v=1; b=;` + "\r\n"
+	valUnfolded := `a=rsa-sha256; bh=uI/rVH7mLBSWkJVvQYKz3TbpdI2BLZWTIMKcuo0KHO I=; c=simple/simple; d=example.org; h=Subject:To:From; s=default; t=1577562184; v=1; b=;`
+
+	h := newTestHeader()
+	h.AddRaw([]byte(dkimLine))
+
+	// 1. It should be possible to get value using any key case.
+	// 2. It should be un-folded.
+	if v := h.Get("Dkim-Signature"); v != valUnfolded {
+		t.Errorf("Get returned wrong value: got \n%v\n but want \n%v", v, valUnfolded)
+	}
+
+	var b bytes.Buffer
+	if err := WriteHeader(&b, h); err != nil {
+		t.Fatalf("WriteHeader() returned error: %v", err)
+	}
+
+	// 1. Header field name is not changed (to Dkim-Signature).
+	// 2. No folding is done.
+	wantHdr := dkimLine + testHeader
+
+	if b.String() != wantHdr {
+		t.Errorf("WriteHeader() wrote invalid data: got \n%v\n but want \n%v", b.String(), wantHdr)
+	}
+}
+
 func TestWriteHeader(t *testing.T) {
 	h := newTestHeader()
 

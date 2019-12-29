@@ -62,6 +62,32 @@ func newHeader(fs []*headerField) Header {
 	return Header{l: fs, m: m}
 }
 
+// AddRaw adds the raw key, value pair to the header.
+//
+// The supplied byte slice should be a complete field in the "Key: Value" form
+// including trailing CRLF. If there is no comma in the input - AddRaw panics.
+// No changes are made to kv contents and it will be copied into WriteHeader
+// output as is.
+//
+// kv is directly added to the underlying structure and therefore should not be
+// modified after the AddRaw call.
+func (h *Header) AddRaw(kv []byte) {
+	colon := bytes.IndexByte(kv, ':')
+	if colon == -1 {
+		panic("textproto: Header.AddRaw: missing colon")
+	}
+	k := textproto.CanonicalMIMEHeaderKey(string(trim(kv[:colon])))
+	v := trimAroundNewlines(kv[colon+1:])
+
+	if h.m == nil {
+		h.m = make(map[string][]*headerField)
+	}
+
+	f := newHeaderField(k, v, kv)
+	h.l = append(h.l, f)
+	h.m[k] = append(h.m[k], f)
+}
+
 // Add adds the key, value pair to the header. It prepends to any existing
 // fields associated with key.
 func (h *Header) Add(k, v string) {
