@@ -205,6 +205,23 @@ func TestReadHeader(t *testing.T) {
 	}
 }
 
+const testInvalidHeader = "Received: from example.com by example.org\r\n" +
+	"Received: from localhost by example.com\r\n" +
+	"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
+	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n" +
+	"not valid: example\r\n"
+
+func TestInvalidHeader(t *testing.T) {
+	r := bufio.NewReader(strings.NewReader(testInvalidHeader))
+	_, err := ReadHeader(r)
+	if err == nil {
+		t.Errorf("No error thrown")
+		// Header is invalid because header name contains a space
+	} else if !strings.HasSuffix(err.Error(), "not valid: example\r\n") {
+		t.Errorf("Improper error thrown: %v", err)
+	}
+}
+
 const testHeaderWithoutBody = "Received: from example.com by example.org\r\n" +
 	"Received: from localhost by example.com\r\n" +
 	"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
