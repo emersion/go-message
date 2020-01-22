@@ -309,6 +309,11 @@ func isSpace(c byte) bool {
 	return c == ' ' || c == '\t'
 }
 
+func validHeaderKeyByte(b byte) bool {
+	c := int(b)
+	return c >= 33 && c <= 126 && c != ':'
+}
+
 // trim returns s with leading and trailing spaces and tabs removed.
 // It does not assume Unicode or UTF-8.
 func trim(s []byte) []byte {
@@ -440,7 +445,17 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 			return newHeader(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
 		}
 
-		key := textproto.CanonicalMIMEHeaderKey(string(trim(kv[:i])))
+		keyBytes := trim(kv[:i])
+
+		// Verify that there are no invalid characters in the header key.
+		// See RFC 5322 Section 2.2
+		for _, c := range keyBytes {
+			if !validHeaderKeyByte(c) {
+				return newHeader(fs), fmt.Errorf("message: malformed MIME header key: %v", string(keyBytes))
+			}
+		}
+
+		key := textproto.CanonicalMIMEHeaderKey(string(keyBytes))
 
 		// As per RFC 7230 field-name is a token, tokens consist of one or more
 		// chars. We could return a an error here, but better to be liberal in

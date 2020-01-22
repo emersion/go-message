@@ -205,6 +205,16 @@ func TestReadHeader(t *testing.T) {
 	}
 }
 
+const testInvalidHeader = "not valid: example\r\n"
+
+func TestInvalidHeader(t *testing.T) {
+	r := bufio.NewReader(strings.NewReader(testInvalidHeader))
+	_, err := ReadHeader(r)
+	if err == nil {
+		t.Errorf("No error thrown")
+	}
+}
+
 const testHeaderWithoutBody = "Received: from example.com by example.org\r\n" +
 	"Received: from localhost by example.com\r\n" +
 	"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
