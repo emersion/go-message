@@ -3,7 +3,6 @@
 [![GoDoc](https://godoc.org/github.com/emersion/go-message?status.svg)](https://godoc.org/github.com/emersion/go-message)
 [![builds.sr.ht status](https://builds.sr.ht/~emersion/go-message.svg)](https://builds.sr.ht/~emersion/go-message?)
 [![codecov](https://codecov.io/gh/emersion/go-message/branch/master/graph/badge.svg)](https://codecov.io/gh/emersion/go-message)
-[![Unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)](https://github.com/emersion/stability-badges#unstable)
 
 A Go library for the Internet Message Format. It implements:
 
