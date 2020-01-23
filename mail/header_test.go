@@ -59,3 +59,67 @@ func TestCFWSDates(t *testing.T) {
 		}
 	}
 }
+
+func TestHeader_MessageID(t *testing.T) {
+	tests := []struct {
+		raw   string
+		msgID string
+	}{
+		{"", ""},
+		{"<123@asdf>", "123@asdf"},
+		{
+			"  \t <DM6PR09MB253761A38B42C713082A7CE2C60C0@DM6PR09MB2537.namprd09.prod.outlook.com>",
+			"DM6PR09MB253761A38B42C713082A7CE2C60C0@DM6PR09MB2537.namprd09.prod.outlook.com",
+		},
+		{
+			`<20200122161125.7enac4n5rsxfnhg7@example.com> (Christopher Wellons's message of "Wed, 22 Jan 2020 11:11:25 -0500")`,
+			"20200122161125.7enac4n5rsxfnhg7@example.com",
+		},
+	}
+	for _, test := range tests {
+		var h mail.Header
+		h.Set("Message-ID", test.raw)
+		msgID, err := h.MessageID()
+		if err != nil {
+			t.Errorf("Failed to parse Message-ID %q: Header.MessageID() = %v", test.raw, err)
+		} else if msgID != test.msgID {
+			t.Errorf("Failed to parse Message-ID %q: Header.MessageID() = %q, want %q", test.raw, msgID, test.msgID)
+		}
+	}
+}
+
+func TestHeader_MsgIDList(t *testing.T) {
+	tests := []struct {
+		raw    string
+		msgIDs []string
+	}{
+		{"", nil},
+		{"<123@asdf>", []string{"123@asdf"}},
+		{
+			"  \t <DM6PR09MB253761A38B42C713082A7CE2C60C0@DM6PR09MB2537.namprd09.prod.outlook.com>",
+			[]string{"DM6PR09MB253761A38B42C713082A7CE2C60C0@DM6PR09MB2537.namprd09.prod.outlook.com"},
+		},
+		{
+			`<20200122161125.7enac4n5rsxfnhg7@example.com> (Christopher Wellons's message of "Wed, 22 Jan 2020 11:11:25 -0500")`,
+			[]string{"20200122161125.7enac4n5rsxfnhg7@example.com"},
+		},
+		{
+			"<87pnfb69f3.fsf@bernat.ch>  \t <20200122161125.7enac4n5rsxfnhg7@nullprogram.com>",
+			[]string{"87pnfb69f3.fsf@bernat.ch", "20200122161125.7enac4n5rsxfnhg7@nullprogram.com"},
+		},
+		{
+			"<87pnfb69f3.fsf@bernat.ch> (a comment) \t <20200122161125.7enac4n5rsxfnhg7@nullprogram.com> (another comment)",
+			[]string{"87pnfb69f3.fsf@bernat.ch", "20200122161125.7enac4n5rsxfnhg7@nullprogram.com"},
+		},
+	}
+	for _, test := range tests {
+		var h mail.Header
+		h.Set("In-Reply-To", test.raw)
+		msgIDs, err := h.MsgIDList("In-Reply-To")
+		if err != nil {
+			t.Errorf("Failed to parse In-Reply-To %q: Header.MsgIDList() = %v", test.raw, err)
+		} else if !reflect.DeepEqual(msgIDs, test.msgIDs) {
+			t.Errorf("Failed to parse In-Reply-To %q: Header.MsgIDList() = %q, want %q", test.raw, msgIDs, test.msgIDs)
+		}
+	}
+}
