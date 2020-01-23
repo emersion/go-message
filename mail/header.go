@@ -12,7 +12,7 @@ const dateLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
 
 // TODO: this is a blunt way to strip any trailing CFWS (comment). A sharper
 // one would strip multiple CFWS, and only if really valid according to
-// RFC5322.
+// RFC 5322.
 var commentRE = regexp.MustCompile(`[ \t]+\(.*\)$`)
 
 // A Header is a mail header.
@@ -21,7 +21,9 @@ type Header struct {
 }
 
 // AddressList parses the named header field as a list of addresses. If the
-// header is missing, it returns nil.
+// header field is missing, it returns nil.
+//
+// This can be used on From, Sender, Reply-To, To, Cc and Bcc header fields.
 func (h *Header) AddressList(key string) ([]*Address, error) {
 	v := h.Get(key)
 	if v == "" {
@@ -30,15 +32,18 @@ func (h *Header) AddressList(key string) ([]*Address, error) {
 	return parseAddressList(v)
 }
 
-// SetAddressList formats the named header to the provided list of addresses.
+// SetAddressList formats the named header field to the provided list of
+// addresses.
+//
+// This can be used on From, Sender, Reply-To, To, Cc and Bcc header fields.
 func (h *Header) SetAddressList(key string, addrs []*Address) {
 	h.Set(key, formatAddressList(addrs))
 }
 
 // Date parses the Date header field.
 func (h *Header) Date() (time.Time, error) {
-	//TODO: remove this once https://go-review.googlesource.com/c/go/+/117596/
-	// is merged
+	// TODO: remove this once https://go-review.googlesource.com/c/go/+/117596/
+	// is released (Go 1.14)
 	date := commentRE.ReplaceAllString(h.Get("Date"), "")
 	return mail.ParseDate(date)
 }

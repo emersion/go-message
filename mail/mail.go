@@ -19,9 +19,9 @@ import (
 	"github.com/martinlindhe/base36"
 )
 
-// Generates an RFC 2822-compliant Message-Id based on the informational draft
-// "Recommendations for generating Message IDs", for lack of a better
-// authoritative source.
+// GenerateMessageID generates an RFC 2822-compliant Message-ID based on the
+// informational draft "Recommendations for generating Message IDs", for lack
+// of a better authoritative source.
 func GenerateMessageID() string {
 	var (
 		now   bytes.Buffer
