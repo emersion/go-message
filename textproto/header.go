@@ -25,7 +25,7 @@ func newHeaderField(k, v string, b []byte) *headerField {
 //
 // The header representation is idempotent: if the header can be read and
 // written, the result will be exactly the same as the original (including
-// whitespace). This is required for e.g. DKIM.
+// whitespace and header field ordering). This is required for e.g. DKIM.
 //
 // Mutating the header is restricted: the only two allowed operations are
 // inserting a new header field at the top and deleting a header field. This is
@@ -147,7 +147,7 @@ func (h *Header) Copy() Header {
 	return Header{l: l, m: m}
 }
 
-// Len returns the amount of fields in the header.
+// Len returns the number of fields in the header.
 func (h *Header) Len() int {
 	return len(h.l)
 }
