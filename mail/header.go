@@ -261,3 +261,40 @@ func (h *Header) Subject() (string, error) {
 func (h *Header) SetSubject(s string) {
 	h.SetText("Subject", s)
 }
+
+// MessageID parses the Message-ID field. It returns the message identifier,
+// without the angle brackets. If the message doesn't have a Message-ID header
+// field, it returns an empty string.
+func (h *Header) MessageID() (string, error) {
+	v := h.Get("Message-Id")
+	if v == "" {
+		return "", nil
+	}
+
+	p := headerParser{v}
+	return p.parseMsgID()
+}
+
+// MsgIDList parses a list of message identifiers. It returns message
+// identifiers without angle brackets. If the header field is missing, it
+// returns nil.
+//
+// This can be used on In-Reply-To and References header fields.
+func (h *Header) MsgIDList(key string) ([]string, error) {
+	v := h.Get(key)
+	if v == "" {
+		return nil, nil
+	}
+
+	p := headerParser{v}
+	var l []string
+	for !p.empty() {
+		msgID, err := p.parseMsgID()
+		if err != nil {
+			return l, err
+		}
+		l = append(l, msgID)
+	}
+
+	return l, nil
+}
