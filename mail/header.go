@@ -1,14 +1,212 @@
 package mail
 
 import (
+	"errors"
+	"fmt"
 	"net/mail"
 	"regexp"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/emersion/go-message"
 )
 
 const dateLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
+
+type headerParser struct {
+	s string
+}
+
+func (p *headerParser) len() int {
+	return len(p.s)
+}
+
+func (p *headerParser) empty() bool {
+	return p.len() == 0
+}
+
+func (p *headerParser) peek() byte {
+	return p.s[0]
+}
+
+func (p *headerParser) consume(c byte) bool {
+	if p.empty() || p.peek() != c {
+		return false
+	}
+	p.s = p.s[1:]
+	return true
+}
+
+// skipSpace skips the leading space and tab characters.
+func (p *headerParser) skipSpace() {
+	p.s = strings.TrimLeft(p.s, " \t")
+}
+
+// skipCFWS skips CFWS as defined in RFC5322. It returns false if the CFWS is
+// malformed.
+func (p *headerParser) skipCFWS() bool {
+	p.skipSpace()
+
+	for {
+		if !p.consume('(') {
+			break
+		}
+
+		if _, ok := p.consumeComment(); !ok {
+			return false
+		}
+
+		p.skipSpace()
+	}
+
+	return true
+}
+
+func (p *headerParser) consumeComment() (string, bool) {
+	// '(' already consumed.
+	depth := 1
+
+	var comment string
+	for {
+		if p.empty() || depth == 0 {
+			break
+		}
+
+		if p.peek() == '\\' && p.len() > 1 {
+			p.s = p.s[1:]
+		} else if p.peek() == '(' {
+			depth++
+		} else if p.peek() == ')' {
+			depth--
+		}
+
+		if depth > 0 {
+			comment += p.s[:1]
+		}
+
+		p.s = p.s[1:]
+	}
+
+	return comment, depth == 0
+}
+
+func (p *headerParser) parseAtomText(dot bool) (string, error) {
+	i := 0
+	for {
+		r, size := utf8.DecodeRuneInString(p.s[i:])
+		if size == 1 && r == utf8.RuneError {
+			return "", fmt.Errorf("mail: invalid UTF-8 in atom-text: %q", p.s)
+		} else if size == 0 || !isAtext(r, dot) {
+			break
+		}
+		i += size
+	}
+	if i == 0 {
+		return "", errors.New("mail: invalid string")
+	}
+
+	var atom string
+	atom, p.s = p.s[:i], p.s[i:]
+	return atom, nil
+}
+
+func isAtext(r rune, dot bool) bool {
+	switch r {
+	case '.':
+		return dot
+	// RFC 5322 3.2.3 specials
+	case '(', ')', '[', ']', ';', '@', '\\', ',':
+		return false
+	case '<', '>', '"', ':':
+		return false
+	}
+	return isVchar(r)
+}
+
+// isVchar reports whether r is an RFC 5322 VCHAR character.
+func isVchar(r rune) bool {
+	// Visible (printing) characters
+	return '!' <= r && r <= '~' || isMultibyte(r)
+}
+
+// isMultibyte reports whether r is a multi-byte UTF-8 character
+// as supported by RFC 6532
+func isMultibyte(r rune) bool {
+	return r >= utf8.RuneSelf
+}
+
+func (p *headerParser) parseNoFoldLiteral() (string, error) {
+	if !p.consume('[') {
+		return "", errors.New("mail: missing '[' in no-fold-literal")
+	}
+
+	i := 0
+	for {
+		r, size := utf8.DecodeRuneInString(p.s[i:])
+		if size == 1 && r == utf8.RuneError {
+			return "", fmt.Errorf("mail: invalid UTF-8 in no-fold-literal: %q", p.s)
+		} else if size == 0 || !isDtext(r) {
+			break
+		}
+		i += size
+	}
+	var lit string
+	lit, p.s = p.s[:i], p.s[i:]
+
+	if !p.consume(']') {
+		return "", errors.New("mail: missing ']' in no-fold-literal")
+	}
+	return "[" + lit + "]", nil
+}
+
+func isDtext(r rune) bool {
+	switch r {
+	case '[', ']', '\\':
+		return false
+	}
+	return isVchar(r)
+}
+
+func (p *headerParser) parseMsgID() (string, error) {
+	if !p.skipCFWS() {
+		return "", errors.New("mail: malformed parenthetical comment")
+	}
+
+	if !p.consume('<') {
+		return "", errors.New("mail: missing '<' in msg-id")
+	}
+
+	left, err := p.parseAtomText(true)
+	if err != nil {
+		return "", err
+	}
+
+	if !p.consume('@') {
+		return "", errors.New("mail: missing '@' in msg-id")
+	}
+
+	var right string
+	if !p.empty() && p.peek() == '[' {
+		// no-fold-literal
+		right, err = p.parseNoFoldLiteral()
+	} else {
+		right, err = p.parseAtomText(true)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if !p.consume('>') {
+		return "", errors.New("mail: missing '>' in msg-id")
+	}
+
+	if !p.skipCFWS() {
+		return "", errors.New("mail: malformed parenthetical comment")
+	}
+
+	return left + "@" + right, nil
+}
 
 // TODO: this is a blunt way to strip any trailing CFWS (comment). A sharper
 // one would strip multiple CFWS, and only if really valid according to
