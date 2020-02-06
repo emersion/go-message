@@ -328,24 +328,6 @@ func trim(s []byte) []byte {
 	return s[i:n]
 }
 
-// skipSpace skips R over all spaces and returns the number of bytes skipped.
-func skipSpace(r *bufio.Reader) int {
-	n := 0
-	for {
-		c, err := r.ReadByte()
-		if err != nil {
-			// bufio will keep err until next read.
-			break
-		}
-		if !isSpace(c) {
-			r.UnreadByte()
-			break
-		}
-		n++
-	}
-	return n
-}
-
 func hasContinuationLine(r *bufio.Reader) bool {
 	c, err := r.ReadByte()
 	if err != nil {
