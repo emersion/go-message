@@ -75,6 +75,10 @@ func TestHeader_MessageID(t *testing.T) {
 			`<20200122161125.7enac4n5rsxfnhg7@example.com> (Christopher Wellons's message of "Wed, 22 Jan 2020 11:11:25 -0500")`,
 			"20200122161125.7enac4n5rsxfnhg7@example.com",
 		},
+		{
+			"<123@[2001:db8:85a3:8d3:1319:8a2e:370:7348]>",
+			"123@[2001:db8:85a3:8d3:1319:8a2e:370:7348]",
+		},
 	}
 	for _, test := range tests {
 		var h mail.Header
