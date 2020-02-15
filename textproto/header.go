@@ -308,7 +308,7 @@ func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 
 		line = append(line, l...)
 
-		if len(line) > MaxLineOctets {
+		if len(line) > maxLineOctets {
 			return nil, TooBigError{"line"}
 		}
 
@@ -422,16 +422,8 @@ func trimAroundNewlines(v []byte) string {
 }
 
 const (
-	MaxHeaderLines = 1000
-
-	// MaxLineOctets is the maximum length of line in the header in bytes (octets).
-	//
-	// The max length in RFC 5322 is 1000 **charcters** (including CRLF).
-	// In the edge case:
-	// \tUTF-8 4-byte chars...CRLF
-	// That is. 3 ASCII characters and 997 left for value which can be
-	// UTF-8 up to 3988 bytes. This gives 3991 bytes in the whole line.
-	MaxLineOctets = 3991
+	maxHeaderLines = 1000
+	maxLineOctets  = 4000
 )
 
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
@@ -449,7 +441,7 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		return newHeader(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
 	}
 
-	maxLines := MaxHeaderLines
+	maxLines := maxHeaderLines
 
 	for {
 		var (
