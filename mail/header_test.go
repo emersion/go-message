@@ -127,3 +127,13 @@ func TestHeader_MsgIDList(t *testing.T) {
 		}
 	}
 }
+
+func TestHeader_GenerateMessageID(t *testing.T) {
+	var h mail.Header
+	if err := h.GenerateMessageID(); err != nil {
+		t.Fatalf("Header.GenerateMessageID() = %v", err)
+	}
+	if _, err := h.MessageID(); err != nil {
+		t.Errorf("Failed to parse generated Message-Id: Header.MessageID() = %v", err)
+	}
+}
