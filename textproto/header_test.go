@@ -215,6 +215,32 @@ func TestInvalidHeader(t *testing.T) {
 	}
 }
 
+func TestReadHeader_TooBig(t *testing.T) {
+	testHeader := "Received: from example.com by example.org\r\n" +
+		"Received: from localhost by example.com\r\n" +
+		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 4000) + "\r\n" +
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
+	_, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	if err == nil {
+		t.Fatalf("ReadHeader() succeeded")
+	}
+	if _, ok := err.(TooBigError); !ok {
+		t.Fatalf("Not TooBigError returned: %T", err)
+	}
+
+	testHeader = "Received: from example.com by example.org\r\n" +
+		"Received: from localhost by example.com\r\n" +
+		"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
+		strings.Repeat("From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n", 1001) + "\r\n"
+	_, err = ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	if err == nil {
+		t.Fatalf("ReadHeader() succeeded")
+	}
+	if _, ok := err.(TooBigError); !ok {
+		t.Fatalf("Not TooBigError returned: %T", err)
+	}
+}
+
 const testHeaderWithoutBody = "Received: from example.com by example.org\r\n" +
 	"Received: from localhost by example.com\r\n" +
 	"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
