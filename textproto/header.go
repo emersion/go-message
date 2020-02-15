@@ -289,6 +289,16 @@ func (h *Header) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
 
+// TooBigError is returned by ReadHeader if one of header components are larger
+// than allowed.
+type TooBigError struct {
+	desc string
+}
+
+func (err TooBigError) Error() string {
+	return "textproto: length limit exceeded: " + err.desc
+}
+
 func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
@@ -297,6 +307,11 @@ func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 		}
 
 		line = append(line, l...)
+
+		if len(line) > MaxLineOctets {
+			return nil, TooBigError{"line"}
+		}
+
 		if !more {
 			break
 		}
@@ -337,16 +352,21 @@ func hasContinuationLine(r *bufio.Reader) bool {
 	return isSpace(c)
 }
 
-func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
+func readContinuedLineSlice(r *bufio.Reader, maxLines int) (int, []byte, error) {
 	// Read the first line. We preallocate slice that it enough
 	// for most fields.
 	line, err := readLineSlice(r, make([]byte, 0, 256))
 	if err != nil {
-		return nil, err
+		return 0, nil, err
+	}
+
+	maxLines--
+	if maxLines <= 0 {
+		return 0, nil, TooBigError{"lines"}
 	}
 
 	if len(line) == 0 { // blank line - no continuation
-		return line, nil
+		return maxLines, line, nil
 	}
 
 	line = append(line, '\r', '\n')
@@ -358,10 +378,15 @@ func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
 			break // bufio will keep err until next read.
 		}
 
+		maxLines--
+		if maxLines <= 0 {
+			return 0, nil, TooBigError{"lines"}
+		}
+
 		line = append(line, '\r', '\n')
 	}
 
-	return line, nil
+	return maxLines, line, nil
 }
 
 func writeContinued(b *strings.Builder, l []byte) {
@@ -396,6 +421,19 @@ func trimAroundNewlines(v []byte) string {
 	return b.String()
 }
 
+const (
+	MaxHeaderLines = 1000
+
+	// MaxLineOctets is the maximum length of line in the header in bytes (octets).
+	//
+	// The max length in RFC 5322 is 1000 **charcters** (including CRLF).
+	// In the edge case:
+	// \tUTF-8 4-byte chars...CRLF
+	// That is. 3 ASCII characters and 997 left for value which can be
+	// UTF-8 up to 3988 bytes. This gives 3991 bytes in the whole line.
+	MaxLineOctets = 3991
+)
+
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
 func ReadHeader(r *bufio.Reader) (Header, error) {
@@ -411,8 +449,14 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		return newHeader(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
 	}
 
+	maxLines := MaxHeaderLines
+
 	for {
-		kv, err := readContinuedLineSlice(r)
+		var (
+			kv  []byte
+			err error
+		)
+		maxLines, kv, err = readContinuedLineSlice(r, maxLines)
 		if len(kv) == 0 {
 			if err == io.EOF {
 				err = nil
