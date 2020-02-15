@@ -325,3 +325,15 @@ func (h *Header) GenerateMessageID() error {
 	h.Set("Message-Id", msgID)
 	return nil
 }
+
+// SetMsgIDList formats a list of message identifiers. Message identifiers
+// don't include angle brackets.
+//
+// This can be used on In-Reply-To and References header fields.
+func (h *Header) SetMsgIDList(key string, l []string) {
+	var v string
+	if len(l) > 0 {
+		v = "<" + strings.Join(l, "> <") + ">"
+	}
+	h.Set(key, v)
+}

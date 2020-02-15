@@ -137,3 +137,22 @@ func TestHeader_GenerateMessageID(t *testing.T) {
 		t.Errorf("Failed to parse generated Message-Id: Header.MessageID() = %v", err)
 	}
 }
+
+func TestHeader_SetMsgIDList(t *testing.T) {
+	tests := []struct {
+		raw    string
+		msgIDs []string
+	}{
+		{"", nil},
+		{"<123@asdf>", []string{"123@asdf"}},
+		{"<123@asdf> <456@asdf>", []string{"123@asdf", "456@asdf"}},
+	}
+	for _, test := range tests {
+		var h mail.Header
+		h.SetMsgIDList("In-Reply-To", test.msgIDs)
+		raw := h.Get("In-Reply-To")
+		if raw != test.raw {
+			t.Errorf("Failed to format In-Reply-To %q: Header.Get() = %q, want %q", test.msgIDs, raw, test.raw)
+		}
+	}
+}
