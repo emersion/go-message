@@ -7,34 +7,3 @@
 //
 // RFC 5322 defines the Internet Message Format.
 package mail
-
-import (
-	"bytes"
-	"crypto/rand"
-	"encoding/binary"
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/martinlindhe/base36"
-)
-
-// GenerateMessageID generates an RFC 2822-compliant Message-ID based on the
-// informational draft "Recommendations for generating Message IDs", for lack
-// of a better authoritative source.
-func GenerateMessageID() string {
-	var (
-		now   bytes.Buffer
-		nonce []byte = make([]byte, 8)
-	)
-	binary.Write(&now, binary.BigEndian, time.Now().UnixNano())
-	rand.Read(nonce)
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "localhost"
-	}
-	return fmt.Sprintf("<%s.%s@%s>",
-		base36.EncodeBytes(now.Bytes()),
-		base36.EncodeBytes(nonce),
-		hostname)
-}
