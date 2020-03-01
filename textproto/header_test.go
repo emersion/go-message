@@ -50,6 +50,13 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Has(non-existing) = true, want false")
 	}
 
+	if got := h.FieldsByKey("Received").Len(); got != 2 {
+		t.Errorf("FieldsByKey(\"Received\").Len() = %v, want %v", got, 2)
+	}
+	if got := h.FieldsByKey("X-I-Dont-Exist").Len(); got != 0 {
+		t.Errorf("FieldsByKey(non-existing).Len() = %v, want %v", got, 0)
+	}
+
 	l := collectHeaderFields(h.Fields())
 	want := []string{
 		"Received: from example.com by example.org",
