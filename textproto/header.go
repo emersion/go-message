@@ -121,11 +121,6 @@ func (h *Header) Set(k, v string) {
 	h.Add(k, v)
 }
 
-// Count returns the amount of header fields with the specified key.
-func (h *Header) Count(k string) int {
-	return len(h.m[k])
-}
-
 // Del deletes the values associated with key.
 //
 // That this function can invalidate DKIM signatures in the message.
@@ -179,6 +174,12 @@ type HeaderFields interface {
 	//
 	// That this function can invalidate DKIM signatures in the message.
 	Del()
+	// Len returns the amount of header fields in the subset of header iterated
+	// by this HeaderFields instance.
+	//
+	// For Fields(), it will return the amount of fields in the whole header section.
+	// For FieldsByKey(), it will return the amount of fields with certain key.
+	Len() int
 }
 
 type headerFields struct {
@@ -240,9 +241,14 @@ func (fs *headerFields) Del() {
 	fs.cur--
 }
 
+func (fs *headerFields) Len() int {
+	return len(fs.h.l)
+}
+
 // Fields iterates over all the header fields.
 //
-// The header may not be mutated while iterating, except using HeaderFields.Del.
+// The header may not be mutated while iterating, except using HeaderFields.Del
+// and HeaderFields.Set.
 func (h *Header) Fields() HeaderFields {
 	return &headerFields{h, -1}
 }
@@ -307,9 +313,14 @@ func (fs *headerFieldsByKey) Del() {
 	fs.cur--
 }
 
+func (fs *headerFieldsByKey) Len() int {
+	return len(fs.h.m[fs.k])
+}
+
 // FieldsByKey iterates over all fields having the specified key.
 //
-// The header may not be mutated while iterating, except using HeaderFields.Del.
+// The header may not be mutated while iterating, except using HeaderFields.Del
+// and HeaderFields.Set.
 func (h *Header) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
