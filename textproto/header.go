@@ -119,6 +119,11 @@ func (h *Header) Set(k, v string) {
 	h.Add(k, v)
 }
 
+// Count returns the amount of header fields with the specified key.
+func (h *Header) Count(k string) int {
+	return len(h.m[k])
+}
+
 // Del deletes the values associated with key.
 func (h *Header) Del(k string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
@@ -162,6 +167,8 @@ type HeaderFields interface {
 	Key() string
 	// Value returns the value of the current field.
 	Value() string
+	// Set changes the value of the current field.
+	Set(v string)
 	// Del deletes the current field.
 	Del()
 }
@@ -196,6 +203,11 @@ func (fs *headerFields) Key() string {
 
 func (fs *headerFields) Value() string {
 	return fs.field().v
+}
+
+func (fs *headerFields) Set(v string) {
+	fs.field().b = nil
+	fs.field().v = v
 }
 
 func (fs *headerFields) Del() {
@@ -258,6 +270,11 @@ func (fs *headerFieldsByKey) Key() string {
 
 func (fs *headerFieldsByKey) Value() string {
 	return fs.field().v
+}
+
+func (fs *headerFieldsByKey) Set(v string) {
+	fs.field().b = nil
+	fs.field().v = v
 }
 
 func (fs *headerFieldsByKey) Del() {

@@ -50,6 +50,13 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Has(non-existing) = true, want false")
 	}
 
+	if got := h.Count("Received"); got != 2 {
+		t.Errorf("Count(\"Received\") = %v, want %v", got, 2)
+	}
+	if got := h.Count("X-I-Dont-Exist"); got != 0 {
+		t.Errorf("Count(non-existing) = %v, want %v", got, 0)
+	}
+
 	l := collectHeaderFields(h.Fields())
 	want := []string{
 		"Received: from example.com by example.org",
@@ -144,6 +151,31 @@ func TestHeader_Fields_Del_single(t *testing.T) {
 
 	if h.FieldsByKey("To").Next() {
 		t.Errorf("FieldsByKey(\"To\") returned a non-empty set")
+	}
+}
+
+func TestHeader_FieldsByKey_Set(t *testing.T) {
+	h := newTestHeader()
+
+	ok := false
+	for f := h.FieldsByKey("Received"); f.Next(); {
+		f.Set("1")
+		ok = true
+		break
+	}
+	if !ok {
+		t.Fatal("FieldsByKey(\"Received\") didn't yield \"Received\"")
+	}
+
+	index := 0
+	for f := h.FieldsByKey("Received"); f.Next(); {
+		if got := f.Value(); index == 0 && got != "1" {
+			t.Errorf("Wrong value for first Recieved, want %s, got %s", "1", got)
+		}
+		if got := f.Value(); index == 1 && got == "1" {
+			t.Errorf("Set affected second Recieved")
+		}
+		index++
 	}
 }
 
