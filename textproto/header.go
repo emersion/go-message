@@ -114,6 +114,8 @@ func (h *Header) Get(k string) string {
 
 // Set sets the header fields associated with key to the single field value.
 // It replaces any existing values associated with key.
+//
+// That this function can invalidate DKIM signatures in the message.
 func (h *Header) Set(k, v string) {
 	h.Del(k)
 	h.Add(k, v)
@@ -125,6 +127,8 @@ func (h *Header) Count(k string) int {
 }
 
 // Del deletes the values associated with key.
+//
+// That this function can invalidate DKIM signatures in the message.
 func (h *Header) Del(k string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
@@ -168,8 +172,12 @@ type HeaderFields interface {
 	// Value returns the value of the current field.
 	Value() string
 	// Set changes the value of the current field.
+	//
+	// That this function can invalidate DKIM signatures in the message.
 	Set(v string)
 	// Del deletes the current field.
+	//
+	// That this function can invalidate DKIM signatures in the message.
 	Del()
 }
 
