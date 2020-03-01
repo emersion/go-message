@@ -163,6 +163,12 @@ type HeaderFields interface {
 	Value() string
 	// Del deletes the current field.
 	Del()
+	// Len returns the amount of header fields in the subset of header iterated
+	// by this HeaderFields instance.
+	//
+	// For Fields(), it will return the amount of fields in the whole header section.
+	// For FieldsByKey(), it will return the amount of fields with certain key.
+	Len() int
 }
 
 type headerFields struct {
@@ -217,6 +223,10 @@ func (fs *headerFields) Del() {
 
 	fs.h.l = append(fs.h.l[:fs.index()], fs.h.l[fs.index()+1:]...)
 	fs.cur--
+}
+
+func (fs *headerFields) Len() int {
+	return len(fs.h.l)
 }
 
 // Fields iterates over all the header fields.
@@ -279,6 +289,10 @@ func (fs *headerFieldsByKey) Del() {
 		delete(fs.h.m, fs.k)
 	}
 	fs.cur--
+}
+
+func (fs *headerFieldsByKey) Len() int {
+	return len(fs.h.m[fs.k])
 }
 
 // FieldsByKey iterates over all fields having the specified key.
