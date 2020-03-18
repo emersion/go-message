@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/textproto"
-	"regexp"
 	"strings"
 )
 
@@ -494,9 +493,6 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 	}
 }
 
-// Regexp that detects Quoted Printable (QP) characters
-var qpReg = regexp.MustCompile("(=[0-9A-Z]{2,2})+")
-
 func foldLine(v string, maxlen int) (line, next string, ok bool) {
 	ok = true
 
@@ -512,24 +508,8 @@ func foldLine(v string, maxlen int) (line, next string, ok bool) {
 			folding = "\r\n"
 		}
 	} else {
-		// Find the last QP character before limit
-		foldAtQP := qpReg.FindAllStringIndex(v[:foldBefore], -1)
 		// Find the closest whitespace before maxlen
-		foldAtEOL := strings.LastIndexAny(v[:foldBefore], " \t\n")
-
-		// Fold at the latest whitespace by default
-		foldAt = foldAtEOL
-
-		// if there are QP characters in the string
-		if len(foldAtQP) > 0 {
-			// Get the start index of the last QP character
-			foldAtQPLastIndex := foldAtQP[len(foldAtQP)-1][0]
-			if foldAtQPLastIndex > foldAt {
-				// Fold at the latest QP character if there are no whitespaces
-				// after it and before line length limit
-				foldAt = foldAtQPLastIndex
-			}
-		}
+		foldAt = strings.LastIndexAny(v[:foldBefore], " \t\n")
 
 		if foldAt == 0 {
 			// The whitespace we found was the previous folding WSP
@@ -551,7 +531,7 @@ func foldLine(v string, maxlen int) (line, next string, ok bool) {
 			// extra space in the string, so this should be avoided if
 			// possible.
 			folding = "\r\n "
-			ok = len(foldAtQP) > 0
+			ok = false
 		}
 	}
 
