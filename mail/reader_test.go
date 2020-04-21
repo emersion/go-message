@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/emersion/go-message/mail"
+	"github.com/emersion/go-message/textproto"
 )
 
 func ExampleReader() {
@@ -15,7 +16,7 @@ func ExampleReader() {
 	var r io.Reader
 
 	// Create a new mail reader
-	mr, err := mail.CreateReader(r)
+	mr, err := mail.CreateReader(r, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,8 +41,8 @@ func ExampleReader() {
 	}
 }
 
-func testReader(t *testing.T, r io.Reader) {
-	mr, err := mail.CreateReader(r)
+func testReader(t *testing.T, r io.Reader, opts *textproto.ReadOpts) {
+	mr, err := mail.CreateReader(r, opts)
 	if err != nil {
 		t.Fatalf("mail.CreateReader(r) = %v", err)
 	}
@@ -107,7 +108,12 @@ func testReader(t *testing.T, r io.Reader) {
 }
 
 func TestReader(t *testing.T) {
-	testReader(t, strings.NewReader(mailString))
+	// test reader with default options
+	testReader(t, strings.NewReader(mailString), nil)
+	// test reader with pre-defined options
+	testReader(t, strings.NewReader(mailString), &textproto.ReadOpts{
+		MaxLineOctets: 2000,
+	})
 }
 
 func TestReader_nonMultipart(t *testing.T) {
@@ -115,7 +121,7 @@ func TestReader_nonMultipart(t *testing.T) {
 		"\r\n" +
 		"Who are you?"
 
-	mr, err := mail.CreateReader(strings.NewReader(s))
+	mr, err := mail.CreateReader(strings.NewReader(s), nil)
 	if err != nil {
 		t.Fatal("Expected no error while creating reader, got:", err)
 	}
@@ -147,7 +153,7 @@ func TestReader_closeImmediately(t *testing.T) {
 		"\r\n" +
 		"Who are you?"
 
-	mr, err := mail.CreateReader(strings.NewReader(s))
+	mr, err := mail.CreateReader(strings.NewReader(s), nil)
 	if err != nil {
 		t.Fatal("Expected no error while creating reader, got:", err)
 	}
@@ -162,7 +168,7 @@ func TestReader_closeImmediately(t *testing.T) {
 func TestReader_nested(t *testing.T) {
 	r := strings.NewReader(nestedMailString)
 
-	mr, err := mail.CreateReader(r)
+	mr, err := mail.CreateReader(r, nil)
 	if err != nil {
 		t.Fatalf("mail.CreateReader(r) = %v", err)
 	}
@@ -196,7 +202,7 @@ func TestReader_nested(t *testing.T) {
 				t.Fatalf("Expected an AttachmentHeader, but got a %T", p.Header)
 			}
 
-			testReader(t, p.Body)
+			testReader(t, p.Body, nil)
 		}
 
 		i++

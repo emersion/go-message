@@ -183,7 +183,7 @@ const testHeader = "Received: from example.com by example.org\r\n" +
 
 func TestReadHeader(t *testing.T) {
 	r := bufio.NewReader(strings.NewReader(testHeader))
-	h, err := ReadHeader(r)
+	h, err := ReadHeader(r, nil)
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
@@ -209,7 +209,7 @@ const testInvalidHeader = "not valid: example\r\n"
 
 func TestInvalidHeader(t *testing.T) {
 	r := bufio.NewReader(strings.NewReader(testInvalidHeader))
-	_, err := ReadHeader(r)
+	_, err := ReadHeader(r, nil)
 	if err == nil {
 		t.Errorf("No error thrown")
 	}
@@ -220,7 +220,7 @@ func TestReadHeader_TooBig(t *testing.T) {
 		"Received: from localhost by example.com\r\n" +
 		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 4000) + "\r\n" +
 		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
-	_, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	_, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)), nil)
 	if err == nil {
 		t.Fatalf("ReadHeader() succeeded")
 	}
@@ -232,13 +232,41 @@ func TestReadHeader_TooBig(t *testing.T) {
 		"Received: from localhost by example.com\r\n" +
 		"To: Taki Tachibana <taki.tachibana@example.org>\r\n" +
 		strings.Repeat("From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n", 1001) + "\r\n"
-	_, err = ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	_, err = ReadHeader(bufio.NewReader(strings.NewReader(testHeader)), nil)
 	if err == nil {
 		t.Fatalf("ReadHeader() succeeded")
 	}
 	if _, ok := err.(TooBigError); !ok {
 		t.Fatalf("Not TooBigError returned: %T", err)
 	}
+}
+
+func TestReadHeaderWithMaxLineOctetsOption(t *testing.T) {
+	testHeader := "Received: from example.com by example.org\r\n" +
+		"Received: from localhost by example.com\r\n" +
+		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 2000) + "\r\n" +
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
+	_, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)), &ReadOpts{
+		MaxLineOctets: 1000,
+	})
+	if err == nil {
+		t.Fatalf("ReadHeader() succeeded")
+	}
+	if _, ok := err.(TooBigError); !ok {
+		t.Fatalf("Not TooBigError returned: %T", err)
+	}
+
+	testHeader = "Received: from example.com by example.org\r\n" +
+		"Received: from localhost by example.com\r\n" +
+		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 5000) + "\r\n" +
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
+	_, err = ReadHeader(bufio.NewReader(strings.NewReader(testHeader)), &ReadOpts{
+		MaxLineOctets: 6000,
+	})
+	if err != nil {
+		t.Fatalf("readHeader() returned error: %v", err)
+	}
+
 }
 
 const testHeaderWithoutBody = "Received: from example.com by example.org\r\n" +
@@ -248,7 +276,7 @@ const testHeaderWithoutBody = "Received: from example.com by example.org\r\n" +
 
 func TestReadHeaderWithoutBody(t *testing.T) {
 	r := bufio.NewReader(strings.NewReader(testHeaderWithoutBody))
-	h, err := ReadHeader(r)
+	h, err := ReadHeader(r, nil)
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
@@ -281,7 +309,7 @@ Content-Type: text/plain
 
 func TestReadHeader_lf(t *testing.T) {
 	r := bufio.NewReader(strings.NewReader(testLFHeader))
-	h, err := ReadHeader(r)
+	h, err := ReadHeader(r, nil)
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}
@@ -353,7 +381,7 @@ const testHeaderWithWhitespace = "Subject \t : \t Hey \r\n" +
 	"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
 
 func TestHeaderWithWhitespace(t *testing.T) {
-	h, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeaderWithWhitespace)))
+	h, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeaderWithWhitespace)), nil)
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
 	}

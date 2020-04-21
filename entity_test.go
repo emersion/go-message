@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+
+	"github.com/emersion/go-message/textproto"
 )
 
 func testMakeEntity() *Entity {
@@ -125,7 +127,18 @@ func TestNewMultipart_read(t *testing.T) {
 }
 
 func TestRead_multipart(t *testing.T) {
-	e, err := Read(strings.NewReader(testMultipartText))
+	e, err := Read(strings.NewReader(testMultipartText), nil)
+	if err != nil {
+		t.Fatal("Expected no error while reading multipart, got", err)
+	}
+
+	testMultipart(t, e)
+}
+
+func TestRead_multipartWithOptions(t *testing.T) {
+	e, err := Read(strings.NewReader(testMultipartText), &textproto.ReadOpts{
+		MaxLineOctets: 2000,
+	})
 	if err != nil {
 		t.Fatal("Expected no error while reading multipart, got", err)
 	}
@@ -134,7 +147,7 @@ func TestRead_multipart(t *testing.T) {
 }
 
 func TestRead_single(t *testing.T) {
-	e, err := Read(strings.NewReader(testSingleText))
+	e, err := Read(strings.NewReader(testSingleText), nil)
 	if err != nil {
 		t.Fatalf("Read() = %v", err)
 	}

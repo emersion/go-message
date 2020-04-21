@@ -35,7 +35,7 @@ func TestWriter_multipartWithoutBoundary(t *testing.T) {
 	}
 	mw.Close()
 
-	e, err := Read(&b)
+	e, err := Read(&b, nil)
 	if err != nil {
 		t.Fatal("Expected no error while reading message, got:", err)
 	}

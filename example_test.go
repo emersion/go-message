@@ -13,7 +13,7 @@ func ExampleRead() {
 	// Let's assume r is an io.Reader that contains a message.
 	var r io.Reader
 
-	m, err := message.Read(r)
+	m, err := message.Read(r, nil)
 	if message.IsUnknownCharset(err) {
 		// This error is not fatal
 		log.Println("Unknown encoding:", err)
@@ -78,7 +78,7 @@ func Example_transform() {
 	// Let's assume r is an io.Reader that contains a message.
 	var r io.Reader
 
-	m, err := message.Read(r)
+	m, err := message.Read(r, nil)
 	if message.IsUnknownCharset(err) {
 		log.Println("Unknown encoding:", err)
 	} else if err != nil {

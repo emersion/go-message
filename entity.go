@@ -84,9 +84,9 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 // If the message uses an unknown transfer encoding or charset, Read returns an
 // error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
-func Read(r io.Reader) (*Entity, error) {
+func Read(r io.Reader, opts *textproto.ReadOpts) (*Entity, error) {
 	br := bufio.NewReader(r)
-	h, err := textproto.ReadHeader(br)
+	h, err := textproto.ReadHeader(br, opts)
 	if err != nil {
 		return nil, err
 	}

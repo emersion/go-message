@@ -84,7 +84,7 @@ func newPart(mr *MultipartReader) (*Part, error) {
 }
 
 func (bp *Part) populateHeaders() error {
-	header, err := ReadHeader(bp.mr.bufReader)
+	header, err := ReadHeader(bp.mr.bufReader, nil)
 	if err == nil {
 		bp.Header = header
 	}
