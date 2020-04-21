@@ -51,6 +51,20 @@ func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	return &Writer{mw}, nil
 }
 
+// CreateInlineWriter writes a mail header to w. The mail will contain an
+// inline part, allowing to represent the same text in different formats.
+// Attachments cannot be included.
+func CreateInlineWriter(w io.Writer, header Header) (*InlineWriter, error) {
+	header.Set("Content-Type", "multipart/alternative")
+
+	mw, err := message.CreateWriter(w, header.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	return &InlineWriter{mw}, nil
+}
+
 // CreateSingleInlineWriter writes a mail header to w. The mail will contain a
 // single inline part. The body of the part should be written to the returned
 // io.WriteCloser. Only one single inline part should be written, use
