@@ -20,11 +20,22 @@ func newHeaderField(k, v string, b []byte) *headerField {
 	return &headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v, b: b}
 }
 
-func (f *headerField) raw() []byte {
+func (f *headerField) raw() ([]byte, error) {
 	if f.b != nil {
-		return f.b
+		return f.b, nil
 	} else {
-		return []byte(formatHeaderField(f.k, f.v))
+		for pos, ch := range f.k {
+			// check if character is a printable US-ASCII except ':'
+			if !(ch >= '!' && ch < ':' || ch > ':' && ch <= '~') {
+				return nil, fmt.Errorf("field name contains incorrect symbols (\\x%x at %v)", ch, pos)
+			}
+		}
+
+		if pos := strings.IndexAny(f.v, "\r\n"); pos != -1 {
+			return nil, fmt.Errorf("field value contains \\r\\n (at %v)", pos)
+		}
+
+		return []byte(formatHeaderField(f.k, f.v)), nil
 	}
 }
 
@@ -97,6 +108,9 @@ func (h *Header) AddRaw(kv []byte) {
 
 // Add adds the key, value pair to the header. It prepends to any existing
 // fields associated with key.
+//
+// Key and value should obey character requirements of RFC 6532.
+// If you need to format/fold lines manually, use AddRaw
 func (h *Header) Add(k, v string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
@@ -126,10 +140,12 @@ func (h *Header) Get(k string) string {
 //
 // The returned slice should not be modified and becomes invalid when the
 // header is updated.
-func (h *Header) Raw(k string) []byte {
+//
+// Error is returned if header contains incorrect characters (RFC 6532)
+func (h *Header) Raw(k string) ([]byte, error) {
 	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
 	if len(fields) == 0 {
-		return nil
+		return nil, nil
 	}
 	return fields[len(fields)-1].raw()
 }
@@ -185,7 +201,7 @@ type HeaderFields interface {
 	// Value returns the value of the current field.
 	Value() string
 	// Raw returns the raw current header field. See Header.Raw.
-	Raw() []byte
+	Raw() ([]byte, error)
 	// Del deletes the current field.
 	Del()
 	// Len returns the amount of header fields in the subset of header iterated
@@ -228,7 +244,7 @@ func (fs *headerFields) Value() string {
 	return fs.field().v
 }
 
-func (fs *headerFields) Raw() []byte {
+func (fs *headerFields) Raw() ([]byte, error) {
 	return fs.field().raw()
 }
 
@@ -298,7 +314,7 @@ func (fs *headerFieldsByKey) Value() string {
 	return fs.field().v
 }
 
-func (fs *headerFieldsByKey) Raw() []byte {
+func (fs *headerFieldsByKey) Raw() ([]byte, error) {
 	return fs.field().raw()
 }
 
@@ -628,8 +644,12 @@ func formatHeaderField(k, v string) string {
 func WriteHeader(w io.Writer, h Header) error {
 	for i := len(h.l) - 1; i >= 0; i-- {
 		f := h.l[i]
-		if _, err := w.Write(f.raw()); err != nil {
-			return err
+		if rawField, err := f.raw(); err == nil {
+			if _, err := w.Write(rawField); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("failed to write header field #%v (%q): %w", len(h.l)-i, f.k, err)
 		}
 	}
 
