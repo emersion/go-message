@@ -16,6 +16,10 @@ type Entity struct {
 
 	mediaType   string
 	mediaParams map[string]string
+
+	originalBody io.Reader
+	encoding     string
+	charset      string
 }
 
 // New makes a new message with the provided header and body. The entity's
@@ -25,8 +29,10 @@ type Entity struct {
 // error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
 func New(header Header, body io.Reader) (*Entity, error) {
-	var err error
+	originalBody := body
+	var encoding, charset string
 
+	var err error
 	mediaType, mediaParams, _ := header.ContentType()
 
 	// QUIRK: RFC 2045 section 6.4 specifies that multipart messages can't have
@@ -35,8 +41,8 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	// e.g. "quoted-printable". So we just ignore it for multipart.
 	// See https://github.com/emersion/go-message/issues/48
 	if !strings.HasPrefix(mediaType, "multipart/") {
-		enc := header.Get("Content-Transfer-Encoding")
-		if decoded, encErr := encodingReader(enc, body); encErr != nil {
+		encoding = header.Get("Content-Transfer-Encoding")
+		if decoded, encErr := encodingReader(encoding, body); encErr != nil {
 			err = unknownEncodingError{encErr}
 		} else {
 			body = decoded
@@ -45,8 +51,9 @@ func New(header Header, body io.Reader) (*Entity, error) {
 
 	// RFC 2046 section 4.1.2: charset only applies to text/*
 	if strings.HasPrefix(mediaType, "text/") {
-		if ch, ok := mediaParams["charset"]; ok {
-			if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
+		var ok bool
+		if charset, ok = mediaParams["charset"]; ok {
+			if converted, charsetErr := charsetReader(charset, body); charsetErr != nil {
 				err = unknownCharsetError{charsetErr}
 			} else {
 				body = converted
@@ -55,10 +62,13 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	}
 
 	return &Entity{
-		Header:      header,
-		Body:        body,
-		mediaType:   mediaType,
-		mediaParams: mediaParams,
+		Header:       header,
+		Body:         body,
+		mediaType:    mediaType,
+		mediaParams:  mediaParams,
+		originalBody: originalBody,
+		encoding:     encoding,
+		charset:      charset,
 	}, err
 }
 
@@ -111,6 +121,8 @@ func (e *Entity) writeBodyTo(w *Writer) error {
 	var err error
 	if mb, ok := e.Body.(*multipartBody); ok {
 		err = mb.writeBodyTo(w)
+	} else if w.encoding == e.encoding && w.charset == e.charset {
+		_, err = io.Copy(w.rawWriter, e.originalBody)
 	} else {
 		_, err = io.Copy(w, e.Body)
 	}

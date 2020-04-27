@@ -21,12 +21,16 @@ type Writer struct {
 	w  io.Writer
 	c  io.Closer
 	mw *textproto.MultipartWriter
+
+	rawWriter io.Writer
+	encoding  string
+	charset   string
 }
 
 // createWriter creates a new Writer writing to w with the provided header.
 // Nothing is written to w when it is called. header is modified in-place.
 func createWriter(w io.Writer, header *Header) (*Writer, error) {
-	ww := &Writer{w: w}
+	ww := &Writer{w: w, rawWriter: w}
 
 	mediaType, mediaParams, _ := header.ContentType()
 	if strings.HasPrefix(mediaType, "multipart/") {
@@ -46,7 +50,8 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 
 		header.Del("Content-Transfer-Encoding")
 	} else {
-		wc, err := encodingWriter(header.Get("Content-Transfer-Encoding"), ww.w)
+		ww.encoding = header.Get("Content-Transfer-Encoding")
+		wc, err := encodingWriter(ww.encoding, ww.w)
 		if err != nil {
 			return nil, err
 		}
@@ -54,12 +59,13 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 		ww.c = wc
 	}
 
-	switch strings.ToLower(mediaParams["charset"]) {
+	ww.charset = mediaParams["charset"]
+	switch strings.ToLower(ww.charset) {
 	case "", "us-ascii", "utf-8":
 		// This is OK
 	default:
 		// Anything else is invalid
-		return nil, fmt.Errorf("unhandled charset %q", mediaParams["charset"])
+		return nil, fmt.Errorf("unhandled charset %q", ww.charset)
 	}
 
 	return ww, nil
