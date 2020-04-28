@@ -47,8 +47,8 @@ func testMakeMultipart() *Entity {
 	return e
 }
 
-const testMultipartHeader = "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +
-	"\r\n"
+const testMultipartHeader = "Mime-Version: 1.0\r\n"+
+	"Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n\r\n"
 
 const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
 	"Content-Type: text/plain\r\n" +
@@ -161,7 +161,8 @@ func TestEntity_WriteTo_decode(t *testing.T) {
 		t.Fatal("Expected no error while writing entity, got", err)
 	}
 
-	expected := "Content-Type: text/plain; charset=utf-8\r\n" +
+	expected := "Mime-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=utf-8\r\n" +
 		"\r\n" +
 		"cc sava"
 
@@ -184,7 +185,8 @@ func TestEntity_WriteTo_convert(t *testing.T) {
 		t.Fatal("Expected no error while writing entity, got", err)
 	}
 
-	expected := "Content-Transfer-Encoding: quoted-printable\r\n" +
+	expected := "Mime-Version: 1.0\r\n" +
+		"Content-Transfer-Encoding: quoted-printable\r\n" +
 		"Content-Type: text/plain; charset=utf-8\r\n" +
 		"\r\n" +
 		"Bonjour =C3=A0 tous"
