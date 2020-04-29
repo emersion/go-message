@@ -20,6 +20,14 @@ func newHeaderField(k, v string, b []byte) *headerField {
 	return &headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v, b: b}
 }
 
+func (f *headerField) raw() []byte {
+	if f.b != nil {
+		return f.b
+	} else {
+		return []byte(formatHeaderField(f.k, f.v))
+	}
+}
+
 // A Header represents the key-value pairs in a message header.
 //
 // The header representation is idempotent: if the header can be read and
@@ -111,6 +119,21 @@ func (h *Header) Get(k string) string {
 	return fields[len(fields)-1].v
 }
 
+// Raw gets the first raw header field associated with the given key.
+//
+// The returned bytes contain a complete field in the "Key: value" form,
+// including trailing CRLF.
+//
+// The returned slice should not be modified and becomes invalid when the
+// header is updated.
+func (h *Header) Raw(k string) []byte {
+	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
+	if len(fields) == 0 {
+		return nil
+	}
+	return fields[len(fields)-1].raw()
+}
+
 // Set sets the header fields associated with key to the single field value.
 // It replaces any existing values associated with key.
 func (h *Header) Set(k, v string) {
@@ -161,6 +184,8 @@ type HeaderFields interface {
 	Key() string
 	// Value returns the value of the current field.
 	Value() string
+	// Raw returns the raw current header field. See Header.Raw.
+	Raw() []byte
 	// Del deletes the current field.
 	Del()
 	// Len returns the amount of header fields in the subset of header iterated
@@ -201,6 +226,10 @@ func (fs *headerFields) Key() string {
 
 func (fs *headerFields) Value() string {
 	return fs.field().v
+}
+
+func (fs *headerFields) Raw() []byte {
+	return fs.field().raw()
 }
 
 func (fs *headerFields) Del() {
@@ -267,6 +296,10 @@ func (fs *headerFieldsByKey) Key() string {
 
 func (fs *headerFieldsByKey) Value() string {
 	return fs.field().v
+}
+
+func (fs *headerFieldsByKey) Raw() []byte {
+	return fs.field().raw()
 }
 
 func (fs *headerFieldsByKey) Del() {
@@ -593,19 +626,9 @@ func formatHeaderField(k, v string) string {
 
 // WriteHeader writes a MIME header to w.
 func WriteHeader(w io.Writer, h Header) error {
-	// TODO: wrap lines when necessary
-
 	for i := len(h.l) - 1; i >= 0; i-- {
 		f := h.l[i]
-
-		var b []byte
-		if f.b != nil {
-			b = f.b
-		} else {
-			b = []byte(formatHeaderField(f.k, f.v))
-		}
-
-		if _, err := w.Write(b); err != nil {
+		if _, err := w.Write(f.raw()); err != nil {
 			return err
 		}
 	}
