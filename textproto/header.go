@@ -431,8 +431,8 @@ type ReadOptions struct {
 }
 
 // Identify if the header line length limit is exceeded
-func (o ReadOptions) headerLineLengthExceeded(lineLenght int) bool {
-	return o.MaxHeaderLineLength < lineLenght && o.MaxHeaderLineLength != -1
+func (o ReadOptions) headerLineLengthExceeded(lineLength int) bool {
+	return o.MaxHeaderLineLength < lineLength && o.MaxHeaderLineLength != -1
 }
 
 func getDefaultReaderOptions(o *ReadOptions) *ReadOptions {
