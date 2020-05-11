@@ -127,7 +127,7 @@ func TestNewMultipart_read(t *testing.T) {
 }
 
 func TestRead_multipart(t *testing.T) {
-	e, err := Read(strings.NewReader(testMultipartText), nil)
+	e, err := Read(strings.NewReader(testMultipartText))
 	if err != nil {
 		t.Fatal("Expected no error while reading multipart, got", err)
 	}
@@ -135,19 +135,39 @@ func TestRead_multipart(t *testing.T) {
 	testMultipart(t, e)
 }
 
-func TestRead_multipartWithOptions(t *testing.T) {
-	e, err := Read(strings.NewReader(testMultipartText), &textproto.ReadOpts{
-		MaxLineOctets: 2000,
+func TestReadWithOptions_multipart(t *testing.T) {
+	// MaxHeaderLineLength option will be set to the default value
+	e, err := ReadWithOptions(strings.NewReader(testMultipartText), ReadOptions{})
+	if err != nil {
+		t.Fatal("Expected no error while reading multipart, got", err)
+	}
+
+	testMultipart(t, e)
+
+	// setting MaxHeaderLineLength to -1 will disable the limit
+	e, err = ReadWithOptions(strings.NewReader(testMultipartText), ReadOptions{
+		Header: textproto.ReadOptions{
+			MaxHeaderLineLength: -1,
+		},
 	})
 	if err != nil {
 		t.Fatal("Expected no error while reading multipart, got", err)
 	}
 
 	testMultipart(t, e)
+
+	e, err = ReadWithOptions(strings.NewReader(testMultipartText), ReadOptions{
+		Header: textproto.ReadOptions{
+			MaxHeaderLineLength: 10,
+		},
+	})
+	if err == nil || err.Error() != "textproto: length limit exceeded: line" {
+		t.Fatal("Expected header length limit exceeded error, got", err)
+	}
 }
 
 func TestRead_single(t *testing.T) {
-	e, err := Read(strings.NewReader(testSingleText), nil)
+	e, err := Read(strings.NewReader(testSingleText))
 	if err != nil {
 		t.Fatalf("Read() = %v", err)
 	}

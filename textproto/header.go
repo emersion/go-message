@@ -298,7 +298,7 @@ func (err TooBigError) Error() string {
 	return "textproto: length limit exceeded: " + err.desc
 }
 
-func readLineSlice(r *bufio.Reader, line []byte, maxLineOctets int) ([]byte, error) {
+func readLineSlice(r *bufio.Reader, o *ReadOptions, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
 		if err != nil {
@@ -307,7 +307,7 @@ func readLineSlice(r *bufio.Reader, line []byte, maxLineOctets int) ([]byte, err
 
 		line = append(line, l...)
 
-		if len(line) > maxLineOctets {
+		if o.headerLineLengthExceeded(len(line)) {
 			return nil, TooBigError{"line"}
 		}
 
@@ -351,10 +351,10 @@ func hasContinuationLine(r *bufio.Reader) bool {
 	return isSpace(c)
 }
 
-func readContinuedLineSlice(r *bufio.Reader, maxLines, maxLineOctets int) (int, []byte, error) {
+func readContinuedLineSlice(r *bufio.Reader, o *ReadOptions, maxLines int) (int, []byte, error) {
 	// Read the first line. We preallocate slice that it enough
 	// for most fields.
-	line, err := readLineSlice(r, make([]byte, 0, 256), maxLineOctets)
+	line, err := readLineSlice(r, o, make([]byte, 0, 256))
 	if err != nil {
 		return 0, nil, err
 	}
@@ -372,7 +372,7 @@ func readContinuedLineSlice(r *bufio.Reader, maxLines, maxLineOctets int) (int, 
 
 	// Read continuation lines.
 	for hasContinuationLine(r) {
-		line, err = readLineSlice(r, line, maxLineOctets)
+		line, err = readLineSlice(r, o, line)
 		if err != nil {
 			break // bufio will keep err until next read.
 		}
@@ -421,37 +421,42 @@ func trimAroundNewlines(v []byte) string {
 }
 
 const (
-	defaultMaxLineOctets = 4000
-	maxHeaderLines       = 1000
+	maxHeaderLines = 1000
+	maxLineOctets  = 4000
 )
 
-// ReadOpts represents the options in a header reader.
-//
-// The supplied options to the ReadHeader can be nil. In this case the default
-// value for MaxLineOctets will be set to the value of defaultMaxLineOctets constant.
-type ReadOpts struct {
-	MaxLineOctets int
+// ReadOptions represents the options in a header reader.
+type ReadOptions struct {
+	MaxHeaderLineLength int
 }
 
-func getDefaultReaderOptions(opts *ReadOpts) *ReadOpts {
-	if opts == nil {
-		opts = &ReadOpts{}
+// Identify if the header line length limit is exceeded
+func (o ReadOptions) headerLineLengthExceeded(lineLenght int) bool {
+	return o.MaxHeaderLineLength != -1 && o.MaxHeaderLineLength < lineLenght
+}
+
+func getDefaultReaderOptions(o *ReadOptions) *ReadOptions {
+	if o == nil {
+		o = &ReadOptions{}
 	}
-	if opts.MaxLineOctets == 0 {
-		opts.MaxLineOctets = defaultMaxLineOctets
+	if o.MaxHeaderLineLength == 0 {
+		o.MaxHeaderLineLength = maxLineOctets
 	}
-	return opts
+	return o
 }
 
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
-func ReadHeader(r *bufio.Reader, opts *ReadOpts) (Header, error) {
+//
+// The supplied options to the ReadHeader can be nil. In this case the default
+// value for MaxHeaderLineLength will be set to the value of maxLineOctets constant.
+func ReadHeader(r *bufio.Reader, o *ReadOptions) (Header, error) {
 	fs := make([]*headerField, 0, 32)
-	opts = getDefaultReaderOptions(opts)
+	o = getDefaultReaderOptions(o)
 
 	// The first line cannot start with a leading space.
 	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
-		line, err := readLineSlice(r, nil, opts.MaxLineOctets)
+		line, err := readLineSlice(r, o, nil)
 		if err != nil {
 			return newHeader(fs), err
 		}
@@ -466,7 +471,7 @@ func ReadHeader(r *bufio.Reader, opts *ReadOpts) (Header, error) {
 			kv  []byte
 			err error
 		)
-		maxLines, kv, err = readContinuedLineSlice(r, maxLines, opts.MaxLineOctets)
+		maxLines, kv, err = readContinuedLineSlice(r, o, maxLines)
 		if len(kv) == 0 {
 			if err == io.EOF {
 				err = nil

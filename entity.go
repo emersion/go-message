@@ -77,6 +77,22 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 	return New(header, r)
 }
 
+// ReadOptions represents the options in a message reader
+type ReadOptions struct {
+	Header textproto.ReadOptions
+}
+
+// ReadWithOptions is a wrapper around Read to read a message from r with options.
+func ReadWithOptions(r io.Reader, options ReadOptions) (*Entity, error) {
+	br := bufio.NewReader(r)
+	h, err := textproto.ReadHeader(br, &options.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(Header{h}, br)
+}
+
 // Read reads a message from r. The message's encoding and charset are
 // automatically decoded to raw UTF-8. Note that this function only reads the
 // message header.
@@ -84,9 +100,9 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 // If the message uses an unknown transfer encoding or charset, Read returns an
 // error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
-func Read(r io.Reader, opts *textproto.ReadOpts) (*Entity, error) {
+func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
-	h, err := textproto.ReadHeader(br, opts)
+	h, err := textproto.ReadHeader(br, nil)
 	if err != nil {
 		return nil, err
 	}

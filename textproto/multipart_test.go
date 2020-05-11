@@ -857,7 +857,7 @@ func TestNoBoundary(t *testing.T) {
 func TestLineLimitExceeded(t *testing.T) {
 	r := strings.NewReader(testMultipartBody("\r\n"))
 	reader := NewMultipartReader(r, "MyBoundary")
-	reader.readOpts.MaxLineOctets = 10
+	reader.ReadOptions.MaxHeaderLineLength = 10
 
 	_, err := reader.NextPart()
 	if err == nil {

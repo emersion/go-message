@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/emersion/go-message"
-	"github.com/emersion/go-message/textproto"
 )
 
 // A PartHeader is a mail part header. It contains convenience functions to get
@@ -62,8 +61,8 @@ func NewReader(e *message.Entity) *Reader {
 // If the message uses an unknown transfer encoding or charset, CreateReader
 // returns an error that verifies message.IsUnknownCharset, but also returns a
 // Reader that can be used.
-func CreateReader(r io.Reader, opts *textproto.ReadOpts) (*Reader, error) {
-	e, err := message.Read(r, opts)
+func CreateReader(r io.Reader) (*Reader, error) {
+	e, err := message.Read(r)
 	if err != nil && !message.IsUnknownCharset(err) {
 		return nil, err
 	}

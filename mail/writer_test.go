@@ -97,7 +97,7 @@ func TestWriter(t *testing.T) {
 
 	mw.Close()
 
-	testReader(t, &b, nil)
+	testReader(t, &b)
 }
 
 func TestWriter_singleInline(t *testing.T) {
@@ -135,5 +135,5 @@ func TestWriter_singleInline(t *testing.T) {
 
 	t.Logf("Formatted message: \n%v", b.String())
 
-	testReader(t, &b, nil)
+	testReader(t, &b)
 }
