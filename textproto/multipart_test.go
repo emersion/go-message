@@ -863,7 +863,7 @@ func TestLineLimitExceeded(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error")
 	}
-	if want := "textproto: length limit exceeded: line"; err.Error() != want {
-		t.Errorf("Expected error to be = %q, got %q", want, err)
+	if _, ok := err.(TooBigError); !ok {
+		t.Fatalf("Not TooBigError returned: %T", err)
 	}
 }

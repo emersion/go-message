@@ -161,8 +161,11 @@ func TestReadWithOptions_multipart(t *testing.T) {
 			MaxHeaderLineLength: 10,
 		},
 	})
-	if err == nil || err.Error() != "textproto: length limit exceeded: line" {
-		t.Fatal("Expected header length limit exceeded error, got", err)
+	if err == nil {
+		t.Fatalf("ReadWithOptions() succeeded with a low limit")
+	}
+	if _, ok := err.(textproto.TooBigError); !ok {
+		t.Fatalf("Not TooBigError returned: %T", err)
 	}
 }
 

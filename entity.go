@@ -82,7 +82,11 @@ type ReadOptions struct {
 	Header textproto.ReadOptions
 }
 
-// ReadWithOptions is a wrapper around Read to read a message from r with options.
+// ReadWithOptions is a mirror of Read to read a message from r with options.
+//
+// Default value for header option of MaxHeaderLineLength
+// will be set to the the value of textproto.maxLineOctets constant.
+// Setting the value to -1 will disable the limit.
 func ReadWithOptions(r io.Reader, options ReadOptions) (*Entity, error) {
 	br := bufio.NewReader(r)
 	h, err := textproto.ReadHeader(br, &options.Header)
