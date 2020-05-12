@@ -298,7 +298,7 @@ func (err TooBigError) Error() string {
 	return "textproto: length limit exceeded: " + err.desc
 }
 
-func readLineSlice(r *bufio.Reader, o *ReadOptions, line []byte) ([]byte, error) {
+func readLineSlice(r *bufio.Reader, line []byte, maxHeaderLineLength int) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
 		if err != nil {
@@ -307,7 +307,7 @@ func readLineSlice(r *bufio.Reader, o *ReadOptions, line []byte) ([]byte, error)
 
 		line = append(line, l...)
 
-		if o.headerLineLengthExceeded(len(line)) {
+		if len(line) > maxHeaderLineLength && maxHeaderLineLength != -1 {
 			return nil, TooBigError{"line"}
 		}
 
@@ -351,10 +351,10 @@ func hasContinuationLine(r *bufio.Reader) bool {
 	return isSpace(c)
 }
 
-func readContinuedLineSlice(r *bufio.Reader, o *ReadOptions, maxLines int) (int, []byte, error) {
+func readContinuedLineSlice(r *bufio.Reader, maxLines, maxHeaderLineLength int) (int, []byte, error) {
 	// Read the first line. We preallocate slice that it enough
 	// for most fields.
-	line, err := readLineSlice(r, o, make([]byte, 0, 256))
+	line, err := readLineSlice(r, make([]byte, 0, 256), maxHeaderLineLength)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -372,7 +372,7 @@ func readContinuedLineSlice(r *bufio.Reader, o *ReadOptions, maxLines int) (int,
 
 	// Read continuation lines.
 	for hasContinuationLine(r) {
-		line, err = readLineSlice(r, o, line)
+		line, err = readLineSlice(r, line, maxHeaderLineLength)
 		if err != nil {
 			break // bufio will keep err until next read.
 		}
@@ -430,11 +430,6 @@ type ReadOptions struct {
 	MaxHeaderLineLength int
 }
 
-// Identify if the header line length limit is exceeded
-func (o ReadOptions) headerLineLengthExceeded(lineLength int) bool {
-	return o.MaxHeaderLineLength < lineLength && o.MaxHeaderLineLength != -1
-}
-
 func getDefaultReaderOptions(o *ReadOptions) *ReadOptions {
 	if o == nil {
 		o = &ReadOptions{}
@@ -456,7 +451,7 @@ func ReadHeader(r *bufio.Reader, o *ReadOptions) (Header, error) {
 
 	// The first line cannot start with a leading space.
 	if buf, err := r.Peek(1); err == nil && isSpace(buf[0]) {
-		line, err := readLineSlice(r, o, nil)
+		line, err := readLineSlice(r, nil, o.MaxHeaderLineLength)
 		if err != nil {
 			return newHeader(fs), err
 		}
@@ -471,7 +466,7 @@ func ReadHeader(r *bufio.Reader, o *ReadOptions) (Header, error) {
 			kv  []byte
 			err error
 		)
-		maxLines, kv, err = readContinuedLineSlice(r, o, maxLines)
+		maxLines, kv, err = readContinuedLineSlice(r, maxLines, o.MaxHeaderLineLength)
 		if len(kv) == 0 {
 			if err == io.EOF {
 				err = nil
