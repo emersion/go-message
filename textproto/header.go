@@ -443,8 +443,9 @@ func getDefaultReaderOptions(o *ReadOptions) *ReadOptions {
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
 //
-// The supplied options to the ReadHeader can be nil. In this case the default
-// value for MaxHeaderLineLength will be set to the value of maxLineOctets constant.
+// Default value for MaxHeaderLineLength option
+// will be set to the the value of maxLineOctets constant.
+// Setting the value to -1 will disable the limit.
 func ReadHeader(r *bufio.Reader, o *ReadOptions) (Header, error) {
 	fs := make([]*headerField, 0, 32)
 	o = getDefaultReaderOptions(o)

@@ -241,7 +241,7 @@ func TestReadHeader_TooBig(t *testing.T) {
 	}
 }
 
-func TestReadHeaderWithMaxLineOctetsOption(t *testing.T) {
+func TestReadHeaderWithMaxHeaderLineLengthOption(t *testing.T) {
 	testHeader := "Received: from example.com by example.org\r\n" +
 		"Received: from localhost by example.com\r\n" +
 		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 5000) + "\r\n" +
