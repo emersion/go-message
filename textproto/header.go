@@ -510,7 +510,7 @@ func getDefaultReaderOptions(o *ReadOptions) *ReadOptions {
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
 //
-// ReadOptions parameter will be set to default values when it is nil.
+// Options will be set to the default value when it is nil.
 func ReadHeader(r *bufio.Reader, o *ReadOptions) (Header, error) {
 	fs := make([]*headerField, 0, 32)
 	o = getDefaultReaderOptions(o)
