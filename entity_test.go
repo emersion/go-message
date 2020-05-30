@@ -137,7 +137,7 @@ func TestRead_multipart(t *testing.T) {
 
 func TestReadWithOptions_multipart(t *testing.T) {
 	// MaxHeaderLineLength option will be set to the default value
-	e, err := ReadWithOptions(strings.NewReader(testMultipartText), ReadOptions{})
+	e, err := ReadWithOptions(strings.NewReader(testMultipartText), nil)
 	if err != nil {
 		t.Fatal("Expected no error while reading multipart, got", err)
 	}
@@ -145,8 +145,8 @@ func TestReadWithOptions_multipart(t *testing.T) {
 	testMultipart(t, e)
 
 	// setting MaxHeaderLineLength to -1 will disable the limit
-	e, err = ReadWithOptions(strings.NewReader(testMultipartText), ReadOptions{
-		Header: textproto.ReadOptions{
+	e, err = ReadWithOptions(strings.NewReader(testMultipartText), &ReadOptions{
+		textproto.ReadOptions{
 			MaxHeaderLineLength: -1,
 		},
 	})
@@ -156,8 +156,8 @@ func TestReadWithOptions_multipart(t *testing.T) {
 
 	testMultipart(t, e)
 
-	e, err = ReadWithOptions(strings.NewReader(testMultipartText), ReadOptions{
-		Header: textproto.ReadOptions{
+	e, err = ReadWithOptions(strings.NewReader(testMultipartText), &ReadOptions{
+		textproto.ReadOptions{
 			MaxHeaderLineLength: 10,
 		},
 	})

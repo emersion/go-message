@@ -76,15 +76,15 @@ func (r *stickyErrorReader) Read(p []byte) (n int, _ error) {
 
 func newPart(mr *MultipartReader) (*Part, error) {
 	bp := &Part{mr: mr}
-	if err := bp.populateHeaders(mr.ReadOptions); err != nil {
+	if err := bp.populateHeaders(mr.readOptions); err != nil {
 		return nil, err
 	}
 	bp.r = partReader{bp}
 	return bp, nil
 }
 
-func (bp *Part) populateHeaders(o ReadOptions) error {
-	header, err := ReadHeader(bp.mr.bufReader, &o)
+func (bp *Part) populateHeaders(o *ReadOptions) error {
+	header, err := ReadHeader(bp.mr.bufReader, o)
 	if err == nil {
 		bp.Header = header
 	}
@@ -236,7 +236,7 @@ type MultipartReader struct {
 	dashBoundaryDash []byte // "--boundary--"
 	dashBoundary     []byte // "--boundary"
 
-	ReadOptions ReadOptions
+	readOptions *ReadOptions
 }
 
 // NextPart returns the next part in the multipart or an error.

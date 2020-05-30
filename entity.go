@@ -79,17 +79,17 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 
 // ReadOptions represents the options in a message reader
 type ReadOptions struct {
-	Header textproto.ReadOptions
+	textproto.ReadOptions
 }
 
 // ReadWithOptions is a mirror of Read to read a message from r with options.
-//
-// Default value for header option of MaxHeaderLineLength
-// will be set to the the value of textproto.maxLineOctets constant.
-// Setting the value to -1 will disable the limit.
-func ReadWithOptions(r io.Reader, options ReadOptions) (*Entity, error) {
+func ReadWithOptions(r io.Reader, options *ReadOptions) (*Entity, error) {
+	if options == nil {
+		options = &ReadOptions{}
+	}
+
 	br := bufio.NewReader(r)
-	h, err := textproto.ReadHeader(br, &options.Header)
+	h, err := textproto.ReadHeader(br, &options.ReadOptions)
 	if err != nil {
 		return nil, err
 	}
