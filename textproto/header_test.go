@@ -50,6 +50,13 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Has(non-existing) = true, want false")
 	}
 
+	if got := h.FieldsByKey("Received").Len(); got != 2 {
+		t.Errorf("FieldsByKey(\"Received\").Len() = %v, want %v", got, 2)
+	}
+	if got := h.FieldsByKey("X-I-Dont-Exist").Len(); got != 0 {
+		t.Errorf("FieldsByKey(non-existing).Len() = %v, want %v", got, 0)
+	}
+
 	l := collectHeaderFields(h.Fields())
 	want := []string{
 		"Received: from example.com by example.org",
@@ -454,16 +461,6 @@ var formatHeaderFieldTests = []struct {
 		formatted: "Subject: InCaseOfVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongStringWeStillSho\r\n uldComplyToTheHardLimitOf998Symbols\r\n",
 	},
 	{
-		k:         "DKIM-Signature",
-		v:         "v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
-		formatted: "Dkim-Signature: v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
-	},
-	{
-		k:         "DKIM-Signature",
-		v:         "v=1; h=From; d=example.org; b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI x0orEtZV4bmp/YzhwvcubU4=\r\n",
-		formatted: "Dkim-Signature: v=1; h=From; d=example.org;\r\n b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x\r\n NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI\r\n x0orEtZV4bmp/YzhwvcubU4=\r\n",
-	},
-	{
 		k:         "Bcc",
 		v:         "",
 		formatted: "Bcc: \r\n",
@@ -486,6 +483,87 @@ func TestWriteHeader_continued(t *testing.T) {
 		}
 		if b.String() != test.formatted+"\r\n" {
 			t.Errorf("Expected formatted header to be \n%v\n but got \n%v", test.formatted+"\r\n", b.String())
+		}
+	}
+}
+
+var incorrectFormatHeaderFieldTests = []struct {
+	k, v      string
+}{
+	{
+		k: "DKIM Signature",
+		v: "v=1; h=From; d=example.org; b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI x0orEtZV4bmp/YzhwvcubU4=\r\n",
+	},
+	{
+		// Unicode, Cyrillic
+		k: "\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a",
+		v: "Value",
+	},
+	{
+		k: "Header:",
+		v: "Value",
+	},
+	{
+		k: "DKIM-Signature",
+		v: "v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
+	},
+	{
+		k: "DKIM-Signature",
+		v: "v=1;\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version; d=example.org",
+	},
+	{
+		k: "DKIM-Signature",
+		v: "v=1;\r h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version; d=example.org",
+	},
+}
+
+func TestWriteHeader_failed(t *testing.T) {
+	for _, test := range incorrectFormatHeaderFieldTests {
+		var h Header
+		h.Add(test.k, test.v)
+
+		var b bytes.Buffer
+		if err := WriteHeader(&b, h); err == nil {
+			t.Errorf("Expected header \n%v: %v\n to be incorrect, but it was accepted", test.k, test.v)
+		}
+	}
+}
+
+var incorrectFormatMultipleHeaderFieldTests = []struct {
+	k1, k2, v1, v2      string
+}{
+	{
+		// Incorrect first
+		k1: "DKIM Signature",
+		v1: "v=1; h=From; d=example.org; b=AuUoFEfDxTDkHlLXSZEpZj79LICEps6eda7W3deTVFOk4yAUoqOB4nujc7YopdG5dWLSdNg6x NAZpOPr+kHxt1IrE+NahM6L/LbvaHutKVdkLLkpVaVVQPzeRDI009SO2Il5Lu7rDNH6mZckBdrI x0orEtZV4bmp/YzhwvcubU4=\r\n",
+		k2: "From",
+		v2: "alice@example.com",
+	},
+	{
+		// Incorrect both
+		k1: "\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a",
+		v1: "Value",
+		k2: "Header:",
+		v2: "Value",
+	},
+	{
+		// Incorrect second
+		k1: "DKIM-Signature",
+		v1: "v=1; h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version; d=example.org",
+		k2: "DKIM-Signature",
+		v2: "v=1;\r\n h=From:To:Reply-To:Subject:Message-ID:References:In-Reply-To:MIME-Version;\r\n d=example.org\r\n",
+	},
+}
+
+func TestWriteHeader_failed_multiple(t *testing.T) {
+	for _, test := range incorrectFormatMultipleHeaderFieldTests {
+		var h Header
+		h.Add(test.k1, test.v1)
+		h.Add(test.k2, test.v2)
+
+		var b bytes.Buffer
+		if err := WriteHeader(&b, h); err == nil {
+			t.Errorf("Expected headers \n%v: %v\n%v: %v\n to be incorrect, but it was accepted", test.k1, test.v2, test.k2, test.v2)
 		}
 	}
 }

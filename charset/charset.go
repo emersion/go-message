@@ -35,9 +35,11 @@ var charsets = map[string]encoding.Encoding{
 
 	"ansi_x3.110-1983": charmap.ISO8859_1,     // see RFC 1345 page 62, mostly superset of ISO 8859-1
 	"gb2312":           simplifiedchinese.GBK, // GBK is a superset of HZGB2312
-	"cp1250":           charmap.Windows1250,
-	"cp1251":           charmap.Windows1251,
-	"cp1252":           charmap.Windows1252,
+	// disabled due to https://github.com/emersion/go-message/issues/95
+	"hz-gb-2312": nil,
+	"cp1250":     charmap.Windows1250,
+	"cp1251":     charmap.Windows1251,
+	"cp1252":     charmap.Windows1252,
 }
 
 func init() {

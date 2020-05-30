@@ -20,6 +20,25 @@ func newHeaderField(k, v string, b []byte) *headerField {
 	return &headerField{k: textproto.CanonicalMIMEHeaderKey(k), v: v, b: b}
 }
 
+func (f *headerField) raw() ([]byte, error) {
+	if f.b != nil {
+		return f.b, nil
+	} else {
+		for pos, ch := range f.k {
+			// check if character is a printable US-ASCII except ':'
+			if !(ch >= '!' && ch < ':' || ch > ':' && ch <= '~') {
+				return nil, fmt.Errorf("field name contains incorrect symbols (\\x%x at %v)", ch, pos)
+			}
+		}
+
+		if pos := strings.IndexAny(f.v, "\r\n"); pos != -1 {
+			return nil, fmt.Errorf("field value contains \\r\\n (at %v)", pos)
+		}
+
+		return []byte(formatHeaderField(f.k, f.v)), nil
+	}
+}
+
 // A Header represents the key-value pairs in a message header.
 //
 // The header representation is idempotent: if the header can be read and
@@ -89,6 +108,9 @@ func (h *Header) AddRaw(kv []byte) {
 
 // Add adds the key, value pair to the header. It prepends to any existing
 // fields associated with key.
+//
+// Key and value should obey character requirements of RFC 6532.
+// If you need to format/fold lines manually, use AddRaw
 func (h *Header) Add(k, v string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
@@ -109,6 +131,23 @@ func (h *Header) Get(k string) string {
 		return ""
 	}
 	return fields[len(fields)-1].v
+}
+
+// Raw gets the first raw header field associated with the given key.
+//
+// The returned bytes contain a complete field in the "Key: value" form,
+// including trailing CRLF.
+//
+// The returned slice should not be modified and becomes invalid when the
+// header is updated.
+//
+// Error is returned if header contains incorrect characters (RFC 6532)
+func (h *Header) Raw(k string) ([]byte, error) {
+	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
+	if len(fields) == 0 {
+		return nil, nil
+	}
+	return fields[len(fields)-1].raw()
 }
 
 // Set sets the header fields associated with key to the single field value.
@@ -161,8 +200,16 @@ type HeaderFields interface {
 	Key() string
 	// Value returns the value of the current field.
 	Value() string
+	// Raw returns the raw current header field. See Header.Raw.
+	Raw() ([]byte, error)
 	// Del deletes the current field.
 	Del()
+	// Len returns the amount of header fields in the subset of header iterated
+	// by this HeaderFields instance.
+	//
+	// For Fields(), it will return the amount of fields in the whole header section.
+	// For FieldsByKey(), it will return the amount of fields with certain key.
+	Len() int
 }
 
 type headerFields struct {
@@ -197,6 +244,10 @@ func (fs *headerFields) Value() string {
 	return fs.field().v
 }
 
+func (fs *headerFields) Raw() ([]byte, error) {
+	return fs.field().raw()
+}
+
 func (fs *headerFields) Del() {
 	f := fs.field()
 
@@ -217,6 +268,10 @@ func (fs *headerFields) Del() {
 
 	fs.h.l = append(fs.h.l[:fs.index()], fs.h.l[fs.index()+1:]...)
 	fs.cur--
+}
+
+func (fs *headerFields) Len() int {
+	return len(fs.h.l)
 }
 
 // Fields iterates over all the header fields.
@@ -259,6 +314,10 @@ func (fs *headerFieldsByKey) Value() string {
 	return fs.field().v
 }
 
+func (fs *headerFieldsByKey) Raw() ([]byte, error) {
+	return fs.field().raw()
+}
+
 func (fs *headerFieldsByKey) Del() {
 	f := fs.field()
 
@@ -279,6 +338,10 @@ func (fs *headerFieldsByKey) Del() {
 		delete(fs.h.m, fs.k)
 	}
 	fs.cur--
+}
+
+func (fs *headerFieldsByKey) Len() int {
+	return len(fs.h.m[fs.k])
 }
 
 // FieldsByKey iterates over all fields having the specified key.
@@ -601,20 +664,14 @@ func formatHeaderField(k, v string) string {
 
 // WriteHeader writes a MIME header to w.
 func WriteHeader(w io.Writer, h Header) error {
-	// TODO: wrap lines when necessary
-
 	for i := len(h.l) - 1; i >= 0; i-- {
 		f := h.l[i]
-
-		var b []byte
-		if f.b != nil {
-			b = f.b
+		if rawField, err := f.raw(); err == nil {
+			if _, err := w.Write(rawField); err != nil {
+				return err
+			}
 		} else {
-			b = []byte(formatHeaderField(f.k, f.v))
-		}
-
-		if _, err := w.Write(b); err != nil {
-			return err
+			return fmt.Errorf("failed to write header field #%v (%q): %w", len(h.l)-i, f.k, err)
 		}
 	}
 

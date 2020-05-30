@@ -49,8 +49,8 @@ func testMakeMultipart() *Entity {
 	return e
 }
 
-const testMultipartHeader = "Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n" +
-	"\r\n"
+const testMultipartHeader = "Mime-Version: 1.0\r\n"+
+	"Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n\r\n"
 
 const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
 	"Content-Type: text/plain\r\n" +
@@ -186,7 +186,7 @@ func TestRead_single(t *testing.T) {
 	}
 }
 
-func TestEntity_WriteTo(t *testing.T) {
+func TestEntity_WriteTo_decode(t *testing.T) {
 	e := testMakeEntity()
 
 	e.Header.SetContentType("text/plain", map[string]string{"charset": "utf-8"})
@@ -197,9 +197,35 @@ func TestEntity_WriteTo(t *testing.T) {
 		t.Fatal("Expected no error while writing entity, got", err)
 	}
 
-	expected := "Content-Type: text/plain; charset=utf-8\r\n" +
+	expected := "Mime-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=utf-8\r\n" +
 		"\r\n" +
 		"cc sava"
+
+	if s := b.String(); s != expected {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
+	}
+}
+
+func TestEntity_WriteTo_convert(t *testing.T) {
+	var h Header
+	h.Set("Content-Type", "text/plain; charset=utf-8")
+	h.Set("Content-Transfer-Encoding", "base64")
+	r := strings.NewReader("Qm9uam91ciDDoCB0b3Vz")
+	e, _ := New(h, r)
+
+	e.Header.Set("Content-Transfer-Encoding", "quoted-printable")
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	expected := "Mime-Version: 1.0\r\n" +
+		"Content-Transfer-Encoding: quoted-printable\r\n" +
+		"Content-Type: text/plain; charset=utf-8\r\n" +
+		"\r\n" +
+		"Bonjour =C3=A0 tous"
 
 	if s := b.String(); s != expected {
 		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)

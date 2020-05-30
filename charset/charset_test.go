@@ -3,6 +3,7 @@ package charset
 import (
 	"bytes"
 	"io/ioutil"
+	"strings"
 	"testing"
 )
 
@@ -69,5 +70,17 @@ func TestCharsetReader(t *testing.T) {
 				t.Errorf("Expected decoded text to be %q but got %q", test.decoded, s)
 			}
 		}
+	}
+}
+
+func TestDisabledCharsetReader(t *testing.T) {
+	_, err := Reader("hz-gb-2312", strings.NewReader("Some dummy text"))
+	if err == nil {
+		t.Errorf("%v encoding is disabled and should give an error", "hz-gb-2312")
+		return
+	}
+	if !strings.HasSuffix(err.Error(), "unsupported charset") {
+		t.Errorf("expected error to end in 'unsupported charset', got %v",
+			err.Error())
 	}
 }
