@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -262,5 +263,87 @@ func TestNewEntity_MultipartReader_notMultipart(t *testing.T) {
 	mr := e.MultipartReader()
 	if mr != nil {
 		t.Fatal("(non-multipart).MultipartReader() != nil")
+	}
+}
+
+type testWalkPart struct {
+	path      []int
+	mediaType string
+	body      string
+	err       error
+}
+
+func walkCollect(e *Entity) ([]testWalkPart, error) {
+	var l []testWalkPart
+	err := e.Walk(func(path []int, part *Entity, err error) error {
+		var body string
+		if part.MultipartReader() == nil {
+			b, err := ioutil.ReadAll(part.Body)
+			if err != nil {
+				return err
+			}
+			body = string(b)
+		}
+		mediaType, _, _ := part.Header.ContentType()
+		l = append(l, testWalkPart{
+			path:      path,
+			mediaType: mediaType,
+			body:      body,
+			err:       err,
+		})
+		return nil
+	})
+	return l, err
+}
+
+func TestWalk_single(t *testing.T) {
+	e, err := Read(strings.NewReader(testSingleText))
+	if err != nil {
+		t.Fatalf("Read() = %v", err)
+	}
+
+	want := []testWalkPart{{
+		path:      nil,
+		mediaType: "text/plain",
+		body:      "Message body",
+	}}
+
+	got, err := walkCollect(e)
+	if err != nil {
+		t.Fatalf("Entity.Walk() = %v", err)
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Entity.Walk() =\n%#v\nbut want:\n%#v", got, want)
+	}
+}
+
+func TestWalk_multipart(t *testing.T) {
+	e := testMakeMultipart()
+
+	want := []testWalkPart{
+		{
+			path:      nil,
+			mediaType: "multipart/alternative",
+		},
+		{
+			path:      []int{0},
+			mediaType: "text/plain",
+			body:      "Text part",
+		},
+		{
+			path:      []int{1},
+			mediaType: "text/html",
+			body:      "<p>HTML part</p>",
+		},
+	}
+
+	got, err := walkCollect(e)
+	if err != nil {
+		t.Fatalf("Entity.Walk() = %v", err)
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Entity.Walk() =\n%#v\nbut want:\n%#v", got, want)
 	}
 }
