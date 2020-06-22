@@ -1,7 +1,7 @@
 # go-message
 
 [![GoDoc](https://godoc.org/github.com/emersion/go-message?status.svg)](https://godoc.org/github.com/emersion/go-message)
-[![builds.sr.ht status](https://builds.sr.ht/~emersion/go-message.svg)](https://builds.sr.ht/~emersion/go-message?)
+[![builds.sr.ht status](https://builds.sr.ht/~emersion/go-message/commits.svg)](https://builds.sr.ht/~emersion/go-message/commits?)
 [![codecov](https://codecov.io/gh/emersion/go-message/branch/master/graph/badge.svg)](https://codecov.io/gh/emersion/go-message)
 
 A Go library for the Internet Message Format. It implements:
