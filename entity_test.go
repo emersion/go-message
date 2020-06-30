@@ -150,6 +150,24 @@ func TestRead_single(t *testing.T) {
 	}
 }
 
+func TestEntity_WriteTo_original(t *testing.T) {
+	e := testMakeEntity()
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	expected := "Content-Transfer-Encoding: base64\r\n" +
+		"Content-Type: text/plain; charset=US-ASCII\r\n" +
+		"\r\n" +
+		"Y2Mgc2F2YQ=="
+
+	if s := b.String(); s != expected {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
+	}
+}
+
 func TestEntity_WriteTo_decode(t *testing.T) {
 	e := testMakeEntity()
 
