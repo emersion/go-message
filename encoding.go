@@ -14,7 +14,9 @@ type unknownEncodingError struct {
 	error
 }
 
-func isUnknownEncoding(err error) bool {
+// IsUnknownEncoding returns a boolean indicating whether the error is known to
+// report that the encoding advertised by the entity is unknown.
+func IsUnknownEncoding(err error) bool {
 	_, ok := err.(unknownEncodingError)
 	return ok
 }
