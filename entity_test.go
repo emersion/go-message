@@ -220,8 +220,8 @@ func TestNew_unknownTransferEncoding(t *testing.T) {
 	if err == nil {
 		t.Fatal("New(unknown transfer encoding): expected an error")
 	}
-	if !isUnknownEncoding(err) {
-		t.Fatal("New(unknown transfer encoding): expected an error that verifies isUnknownEncoding")
+	if !IsUnknownEncoding(err) {
+		t.Fatal("New(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {
