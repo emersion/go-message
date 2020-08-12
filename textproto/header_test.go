@@ -3,6 +3,7 @@ package textproto
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -219,6 +220,27 @@ func TestInvalidHeader(t *testing.T) {
 	_, err := ReadHeader(r)
 	if err == nil {
 		t.Errorf("No error thrown")
+	}
+}
+
+const testmalformedHeader = "error\r\nKey1: Value\r\nerror\r\nKey2: Value\r\nerror\r\nKey3: Value\r\nerror\r\nKey4: Value\r\nerror\r\nKey5: Value\r\nerror\r\nKey6: Value\r\n"
+
+func TestMalformedHeader(t *testing.T) {
+	r := bufio.NewReader(strings.NewReader(testmalformedHeader))
+	h, err := ReadHeader(r)
+	if err == nil {
+		t.Errorf("No error thrown")
+	}
+
+	for i := 1; i <= 5; i++ {
+		key := fmt.Sprintf("Key%d", i)
+		if h.Get(key) != "Value" {
+			t.Errorf("Key: %s should eqal Value", key)
+		}
+	}
+
+	if h.Get("Key6") == "Value" {
+		t.Errorf("Key6 should be skipped")
 	}
 }
 

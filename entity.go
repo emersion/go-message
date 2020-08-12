@@ -2,6 +2,7 @@ package message
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 
@@ -88,7 +89,12 @@ func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
 	h, err := textproto.ReadHeader(br)
 	if err != nil {
-		return nil, err
+		e, newErr := New(Header{h}, br)
+		if newErr != nil {
+			return e, fmt.Errorf("%w: %v", err, newErr)
+		} else {
+			return e, err
+		}
 	}
 
 	return New(Header{h}, br)

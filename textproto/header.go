@@ -505,6 +505,9 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 
 	maxLines := maxHeaderLines
 
+	errCounter := 0
+	errThreshold := 5
+	var lastErr error
 	for {
 		var (
 			kv  []byte
@@ -515,6 +518,9 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 			if err == io.EOF {
 				err = nil
 			}
+			if err == nil {
+				err = lastErr
+			}
 			return newHeader(fs), err
 		}
 
@@ -522,7 +528,9 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		// appear in the wild, violating specs, so we remove them if present.
 		i := bytes.IndexByte(kv, ':')
 		if i < 0 {
-			return newHeader(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
+			lastErr = fmt.Errorf("message: malformed MIME header line: %v", string(kv))
+			errCounter++
+			continue
 		}
 
 		keyBytes := trim(kv[:i])
@@ -531,7 +539,9 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		// See RFC 5322 Section 2.2
 		for _, c := range keyBytes {
 			if !validHeaderKeyByte(c) {
-				return newHeader(fs), fmt.Errorf("message: malformed MIME header key: %v", string(keyBytes))
+				lastErr = fmt.Errorf("message: malformed MIME header key: %v", string(keyBytes))
+				errCounter++
+				continue
 			}
 		}
 
@@ -550,8 +560,8 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		value := trimAroundNewlines(v)
 		fs = append(fs, newHeaderField(key, value, kv))
 
-		if err != nil {
-			return newHeader(fs), err
+		if lastErr != nil && errCounter >= errThreshold {
+			return newHeader(fs), lastErr
 		}
 	}
 }
