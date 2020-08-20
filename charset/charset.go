@@ -12,6 +12,7 @@ import (
 	"github.com/emersion/go-message"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/ianaindex"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
@@ -55,6 +56,9 @@ func Reader(charset string, input io.Reader) (io.Reader, error) {
 	}
 	if err != nil {
 		enc, err = ianaindex.MIME.Encoding("cs" + charset)
+	}
+	if err != nil {
+		enc, err = htmlindex.Get(charset)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("charset %q: %v", charset, err)

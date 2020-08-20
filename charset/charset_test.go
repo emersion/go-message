@@ -51,6 +51,11 @@ var testCharsets = []struct {
 		encoded: []byte{178, 226, 202, 212},
 		decoded: "测试",
 	},
+	{
+		charset: "iso8859-2",
+		encoded: []byte{0x63, 0x61, 0x66, 0xE9, 0x20, 0xfb},
+		decoded: "café ű",
+	},
 }
 
 func TestCharsetReader(t *testing.T) {
