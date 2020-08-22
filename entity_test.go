@@ -2,6 +2,7 @@ package message
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -222,6 +223,9 @@ func TestNew_unknownTransferEncoding(t *testing.T) {
 	}
 	if !IsUnknownEncoding(err) {
 		t.Fatal("New(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
+	}
+	if !errors.As(err, &UnknownEncodingError{}) {
+		t.Fatal("New(unknown transfer encoding): expected an error that verifies errors.As(err, &EncodingError{})")
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {

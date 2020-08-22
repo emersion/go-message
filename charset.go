@@ -1,21 +1,27 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"strings"
 )
 
-type unknownCharsetError struct {
-	error
+type UnknownCharsetError struct {
+	e error
+}
+
+func (u UnknownCharsetError) Unwrap() error { return u.e }
+
+func (u UnknownCharsetError) Error() string {
+	return "unknown charset: " + u.e.Error()
 }
 
 // IsUnknownCharset returns a boolean indicating whether the error is known to
 // report that the charset advertised by the entity is unknown.
 func IsUnknownCharset(err error) bool {
-	_, ok := err.(unknownCharsetError)
-	return ok
+	return errors.As(err, new(UnknownCharsetError))
 }
 
 // CharsetReader, if non-nil, defines a function to generate charset-conversion

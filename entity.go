@@ -37,7 +37,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	if !strings.HasPrefix(mediaType, "multipart/") {
 		enc := header.Get("Content-Transfer-Encoding")
 		if decoded, encErr := encodingReader(enc, body); encErr != nil {
-			err = unknownEncodingError{encErr}
+			err = UnknownEncodingError{encErr}
 		} else {
 			body = decoded
 		}
@@ -47,7 +47,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	if strings.HasPrefix(mediaType, "text/") {
 		if ch, ok := mediaParams["charset"]; ok {
 			if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
-				err = unknownCharsetError{charsetErr}
+				err = UnknownCharsetError{charsetErr}
 			} else {
 				body = converted
 			}
