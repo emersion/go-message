@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"mime/quotedprintable"
@@ -10,15 +11,20 @@ import (
 	"github.com/emersion/go-textwrapper"
 )
 
-type unknownEncodingError struct {
-	error
+type UnknownEncodingError struct {
+	e error
+}
+
+func (u UnknownEncodingError) Unwrap() error { return u.e }
+
+func (u UnknownEncodingError) Error() string {
+	return "encoding error: " + u.e.Error()
 }
 
 // IsUnknownEncoding returns a boolean indicating whether the error is known to
 // report that the encoding advertised by the entity is unknown.
 func IsUnknownEncoding(err error) bool {
-	_, ok := err.(unknownEncodingError)
-	return ok
+	return errors.As(err, new(UnknownEncodingError))
 }
 
 func encodingReader(enc string, r io.Reader) (io.Reader, error) {
