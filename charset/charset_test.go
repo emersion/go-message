@@ -84,7 +84,7 @@ func TestDisabledCharsetReader(t *testing.T) {
 		t.Errorf("%v encoding is disabled and should give an error", "hz-gb-2312")
 		return
 	}
-	if !strings.HasSuffix(err.Error(), "unsupported charset") {
+	if !strings.HasSuffix(err.Error(), "charset is disabled") {
 		t.Errorf("expected error to end in 'unsupported charset', got %v",
 			err.Error())
 	}

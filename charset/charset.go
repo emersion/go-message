@@ -14,7 +14,6 @@ import (
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/ianaindex"
-	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
 // Quirks table for charsets not handled by ianaindex
@@ -47,13 +46,15 @@ func init() {
 func Reader(charset string, input io.Reader) (io.Reader, error) {
 	var err error
 	enc, ok := charsets[strings.ToLower(charset)]
-	if !ok {
+	if ok && enc == nil {
+		return nil, fmt.Errorf("charset %q: charset is disabled", charset)
+	} else if !ok {
 		enc, err = ianaindex.MIME.Encoding(charset)
 	}
-	if err != nil {
+	if enc == nil {
 		enc, err = ianaindex.MIME.Encoding("cs" + charset)
 	}
-	if err != nil {
+	if enc == nil {
 		enc, err = htmlindex.Get(charset)
 	}
 	if err != nil {
