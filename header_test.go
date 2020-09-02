@@ -70,7 +70,7 @@ func TestKnownCharset(t *testing.T) {
 func TestUnknownCharset(t *testing.T) {
 	var h Header
 
-	h.Set("Subject", "=?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=")
+	h.Set("Subject", "=?INVALIDCHARSET?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=")
 
 	fields := h.Fields()
 	if !fields.Next() {
