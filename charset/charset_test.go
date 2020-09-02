@@ -85,7 +85,7 @@ func TestDisabledCharsetReader(t *testing.T) {
 		return
 	}
 	if !strings.HasSuffix(err.Error(), "charset is disabled") {
-		t.Errorf("expected error to end in 'unsupported charset', got %v",
+		t.Errorf("expected error to end in 'charset is disabled', got %v",
 			err.Error())
 	}
 }
