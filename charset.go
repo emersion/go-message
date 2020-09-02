@@ -49,7 +49,16 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 // decodeHeader decodes an internationalized header field. If it fails, it
 // returns the input string and the error.
 func decodeHeader(s string) (string, error) {
-	wordDecoder := mime.WordDecoder{CharsetReader: charsetReader}
+	charsetReaderWrapper := func(charset string, input io.Reader) (io.Reader, error) {
+		r, err := charsetReader(charset, input)
+		if err != nil {
+			return input, UnknownCharsetError{err}
+		}
+
+		return r, nil
+	}
+
+	wordDecoder := mime.WordDecoder{CharsetReader: charsetReaderWrapper}
 	dec, err := wordDecoder.DecodeHeader(s)
 	if err != nil {
 		return s, err
