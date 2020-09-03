@@ -50,3 +50,38 @@ func TestEmptyContentType(t *testing.T) {
 		t.Errorf("Expected media type %q but got %q", mediaType, gotMediaType)
 	}
 }
+
+func TestKnownCharset(t *testing.T) {
+	var h Header
+
+	h.Set("Subject", "=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=")
+
+	fields := h.Fields()
+	if !fields.Next() {
+		t.Error("Expected to be able to advance to first header item")
+	}
+
+	_, err := fields.Text()
+	if err != nil {
+		t.Error("Expected no error when decoding header key of known charset, but got: ", err)
+	}
+}
+
+func TestUnknownCharset(t *testing.T) {
+	var h Header
+
+	h.Set("Subject", "=?INVALIDCHARSET?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=")
+
+	fields := h.Fields()
+	if !fields.Next() {
+		t.Error("Expected to be able to advance to first header item")
+	}
+
+	_, err := fields.Text()
+	if err == nil {
+		t.Error("Expected error decoding header key of unknown charset")
+	}
+	if !IsUnknownCharset(err) {
+		t.Error("Expected error to verify IsUnknownCharset")
+	}
+}

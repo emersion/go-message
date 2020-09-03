@@ -41,9 +41,13 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 		return input, nil
 	}
 	if CharsetReader != nil {
-		return CharsetReader(charset, input)
+		r, err := CharsetReader(charset, input)
+		if err != nil {
+			return r, UnknownCharsetError{err}
+		}
+		return r, nil
 	}
-	return input, fmt.Errorf("message: unhandled charset %q", charset)
+	return input, UnknownCharsetError{fmt.Errorf("message: unhandled charset %q", charset)}
 }
 
 // decodeHeader decodes an internationalized header field. If it fails, it
