@@ -1,13 +1,12 @@
-package textproto_test
+package textproto
 
 import (
 	"fmt"
 
-	"github.com/emersion/go-message/textproto"
 )
 
 func ExampleHeader() {
-	var h textproto.Header
+	var h Header
 	h.Add("From", "<root@nsa.gov>")
 	h.Add("To", "<root@gchq.gov.uk>")
 	h.Set("Subject", "Tonight's dinner")
