@@ -2,7 +2,9 @@ package message
 
 import (
 	"bufio"
+	"bytes"
 	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/emersion/go-message/textproto"
@@ -11,8 +13,9 @@ import (
 // An Entity is either a whole message or a one of the parts in the body of a
 // multipart entity.
 type Entity struct {
-	Header Header    // The entity's header.
-	Body   io.Reader // The decoded entity's body.
+	Header  Header    // The entity's header.
+	Body    io.Reader // The decoded entity's body.
+	RawBody []byte    // The raw entity's body.
 
 	mediaType   string
 	mediaParams map[string]string
@@ -25,7 +28,12 @@ type Entity struct {
 // error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
 func New(header Header, body io.Reader) (*Entity, error) {
-	var err error
+	b, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+
+	body = bytes.NewReader(b)
 
 	mediaType, mediaParams, _ := header.ContentType()
 
@@ -57,6 +65,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	return &Entity{
 		Header:      header,
 		Body:        body,
+		RawBody:     b,
 		mediaType:   mediaType,
 		mediaParams: mediaParams,
 	}, err
