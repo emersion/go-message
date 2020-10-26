@@ -21,8 +21,6 @@ import (
 // For aliases, see
 // https://www.iana.org/assignments/character-sets/character-sets.xhtml
 var charsets = map[string]encoding.Encoding{
-	// us-ascii not handled by ianaindex
-	"us-ascii":         encoding.Nop,
 	"iso-ir-6":         encoding.Nop,
 	"ansi_x3.4-1968":   encoding.Nop,
 	"ansi_x3.4-1986":   encoding.Nop,
