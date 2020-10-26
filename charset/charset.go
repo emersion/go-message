@@ -21,16 +21,6 @@ import (
 // For aliases, see
 // https://www.iana.org/assignments/character-sets/character-sets.xhtml
 var charsets = map[string]encoding.Encoding{
-	"iso-ir-6":         encoding.Nop,
-	"ansi_x3.4-1968":   encoding.Nop,
-	"ansi_x3.4-1986":   encoding.Nop,
-	"iso_646.irv:1991": encoding.Nop,
-	"iso646-us":        encoding.Nop,
-	"us":               encoding.Nop,
-	"ibm367":           encoding.Nop,
-	"cp367":            encoding.Nop,
-	"ascii":            encoding.Nop, // non-standard
-
 	"ansi_x3.110-1983": charmap.ISO8859_1, // see RFC 1345 page 62, mostly superset of ISO 8859-1
 	// disabled due to https://github.com/emersion/go-message/issues/95
 	"hz-gb-2312": nil,
