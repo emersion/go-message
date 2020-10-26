@@ -14,6 +14,9 @@ type Address mail.Address
 // String formats the address as a valid RFC 5322 address. If the address's name
 // contains non-ASCII characters the name will be rendered according to
 // RFC 2047.
+//
+// Don't use this function to set a message header field, instead use
+// Header.SetAddressList.
 func (a *Address) String() string {
 	return ((*mail.Address)(a)).String()
 }
