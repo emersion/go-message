@@ -164,7 +164,7 @@ func (e *Entity) Walk(walkFunc WalkFunc) error {
 				multipartReaders = multipartReaders[:len(multipartReaders)-1]
 				path = path[:len(path)-1]
 				continue
-			} else if IsUnknownCharset(err) {
+			} else if IsUnknownEncoding(err) || IsUnknownCharset(err) {
 				// Forward the error to walkFunc
 			} else if err != nil {
 				return err
