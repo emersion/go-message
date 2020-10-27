@@ -145,7 +145,7 @@ type WalkFunc func(path []int, entity *Entity, err error) error
 // Walk walks the entity's multipart tree, calling walkFunc for each part in
 // the tree, including the root entity.
 //
-// The entity is fully consumed by Walk.
+// Walk consumes the entity.
 func (e *Entity) Walk(walkFunc WalkFunc) error {
 	var multipartReaders []MultipartReader
 	var path []int
