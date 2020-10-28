@@ -85,6 +85,10 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 // error that verifies IsUnknownCharset, but also returns an Entity that can
 // be read.
 func Read(r io.Reader) (*Entity, error) {
+	if er, ok := r.(*entityReader); ok {
+		return er.e, nil
+	}
+
 	br := bufio.NewReader(r)
 	h, err := textproto.ReadHeader(br)
 	if err != nil {
@@ -104,6 +108,11 @@ func (e *Entity) MultipartReader() MultipartReader {
 		return mb
 	}
 	return &multipartReader{textproto.NewMultipartReader(e.Body, e.mediaParams["boundary"])}
+}
+
+// Reader returns an io.Reader for this entity's header and body.
+func (e *Entity) Reader() io.Reader {
+	return &entityReader{e}
 }
 
 // writeBodyTo writes this entity's body to w (without the header).
@@ -126,4 +135,19 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	defer ew.Close()
 
 	return e.writeBodyTo(ew)
+}
+
+type entityReader struct {
+	e      *Entity
+	header bytes.Buffer
+	r      io.Reader
+}
+
+func (er *entityReader) Read(b []byte) (int, error) {
+	if er.r == nil {
+		textproto.WriteHeader(&er.header, er.e.Header.Header)
+		// TODO: what about conversions?
+		er.r = io.MultiReader(&er.header, er.e.originalBody)
+	}
+	return er.r.Read(b)
 }
