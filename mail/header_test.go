@@ -1,6 +1,7 @@
 package mail_test
 
 import (
+	netmail "net/mail"
 	"reflect"
 	"testing"
 	"time"
@@ -154,5 +155,24 @@ func TestHeader_SetMsgIDList(t *testing.T) {
 		if raw != test.raw {
 			t.Errorf("Failed to format In-Reply-To %q: Header.Get() = %q, want %q", test.msgIDs, raw, test.raw)
 		}
+	}
+}
+
+func TestHeader_CanUseNetMailAddress(t *testing.T) {
+	netfrom := []*netmail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
+	mailfrom := []*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
+
+	//sanity check that they types are identical
+	if !reflect.DeepEqual(netfrom, mailfrom) {
+		t.Error("[]*net/mail.Address differs from []*mail.Address")
+	}
+
+	//roundtrip
+	var h mail.Header
+	h.SetAddressList("From", netfrom)
+	if got, err := h.AddressList("From"); err != nil {
+		t.Error("Expected no error while parsing header address list, got:", err)
+	} else if !reflect.DeepEqual(got, netfrom) {
+		t.Errorf("Expected header address list to be %v, but got %v", netfrom, got)
 	}
 }
