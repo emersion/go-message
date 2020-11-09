@@ -232,7 +232,7 @@ func (h *Header) AddressList(key string) ([]*Address, error) {
 	if v == "" {
 		return nil, nil
 	}
-	return parseAddressList(v)
+	return ParseAddressList(v)
 }
 
 // SetAddressList formats the named header field to the provided list of
