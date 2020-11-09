@@ -9,32 +9,15 @@ import (
 )
 
 // Address represents a single mail address.
-type Address mail.Address
-
-// String formats the address as a valid RFC 5322 address. If the address's name
-// contains non-ASCII characters the name will be rendered according to
-// RFC 2047.
-//
-// Don't use this function to set a message header field, instead use
-// Header.SetAddressList.
-func (a *Address) String() string {
-	return ((*mail.Address)(a)).String()
-}
+// The type alias ensures that a net/mail.Address can be used wherever an
+// Address is expected
+type Address = mail.Address
 
 func parseAddressList(s string) ([]*Address, error) {
 	parser := mail.AddressParser{
 		&mime.WordDecoder{message.CharsetReader},
 	}
-	list, err := parser.ParseList(s)
-	if err != nil {
-		return nil, err
-	}
-
-	addrs := make([]*Address, len(list))
-	for i, a := range list {
-		addrs[i] = (*Address)(a)
-	}
-	return addrs, nil
+	return parser.ParseList(s)
 }
 
 func formatAddressList(l []*Address) string {
