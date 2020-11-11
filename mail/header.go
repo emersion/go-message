@@ -337,3 +337,8 @@ func (h *Header) SetMsgIDList(key string, l []string) {
 	}
 	h.Set(key, v)
 }
+
+// Copy creates a stand-aline copy of the header.
+func (h *Header) Copy() Header {
+	return Header{h.Header.Copy()}
+}

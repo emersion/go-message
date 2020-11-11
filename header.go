@@ -88,6 +88,11 @@ func (h *Header) SetText(k, v string) {
 	h.Set(k, encodeHeader(v))
 }
 
+// Copy creates a stand-alone copy of the header.
+func (h *Header) Copy() Header {
+	return Header{h.Header.Copy()}
+}
+
 // Fields iterates over all the header fields.
 //
 // The header may not be mutated while iterating, except using HeaderFields.Del.
