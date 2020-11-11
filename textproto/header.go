@@ -174,7 +174,15 @@ func (h *Header) Del(k string) {
 // Has checks whether the header has a field with the specified key.
 func (h *Header) Has(k string) bool {
 	_, ok := h.m[textproto.CanonicalMIMEHeaderKey(k)]
-	return ok
+	if ok {
+		// Also check if key exists
+		for i := 0; i < len(h.l); i++ {
+			if h.l[i].k == k {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Copy creates an independent copy of the header.
