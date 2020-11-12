@@ -70,6 +70,9 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 // The charset needs to be utf-8 or us-ascii.
 func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 
+	// ensure that modifications are invisible to the caller
+	header = header.Copy()
+
 	// If the message uses MIME, it has to include MIME-Version
 	header.Set("MIME-Version", "1.0")
 
@@ -113,6 +116,9 @@ func (w *Writer) CreatePart(header Header) (*Writer, error) {
 	// cw -> ww -> pw -> w.mw -> w.w
 
 	ww := &struct{ io.Writer }{nil}
+
+	// ensure that modifications are invisible to the caller
+	header = header.Copy()
 	cw, err := createWriter(ww, &header)
 	if err != nil {
 		return nil, err
