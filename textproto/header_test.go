@@ -80,6 +80,14 @@ func TestHeader(t *testing.T) {
 	if h.FieldsByKey("X-I-Dont-Exist").Next() {
 		t.Errorf("FieldsByKey(non-existing).Next() returned true, want false")
 	}
+
+	want = []string{
+		"from example.com by example.org",
+		"from localhost by example.com",
+	}
+	if l := h.Values("Received"); !reflect.DeepEqual(l, want) {
+		t.Errorf("Values(\"Received\") reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
 }
 
 func TestHeader_Set(t *testing.T) {
