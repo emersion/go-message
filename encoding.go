@@ -31,7 +31,7 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	var dec io.Reader
 	switch strings.ToLower(enc) {
 	case "quoted-printable":
-		dec = quotedprintable.NewReader(r)
+		dec = newQuotedPrintableLongLinesReader(r)
 	case "base64":
 		dec = base64.NewDecoder(base64.StdEncoding, r)
 	case "7bit", "8bit", "binary", "":
