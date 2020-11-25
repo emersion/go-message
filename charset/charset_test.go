@@ -79,13 +79,10 @@ func TestCharsetReader(t *testing.T) {
 }
 
 func TestDisabledCharsetReader(t *testing.T) {
-	_, err := Reader("hz-gb-2312", strings.NewReader("Some dummy text"))
+	charsets["DISABLED"] = nil
+
+	_, err := Reader("DISABLED", strings.NewReader("Some dummy text"))
 	if err == nil {
-		t.Errorf("%v encoding is disabled and should give an error", "hz-gb-2312")
-		return
-	}
-	if !strings.HasSuffix(err.Error(), "charset is disabled") {
-		t.Errorf("expected error to end in 'charset is disabled', got %v",
-			err.Error())
+		t.Errorf("Reader(): expected disabled charset to return an error")
 	}
 }

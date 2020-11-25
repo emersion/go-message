@@ -18,12 +18,12 @@ import (
 
 // Quirks table for charsets not handled by ianaindex
 //
+// A nil entry disables the charset.
+//
 // For aliases, see
 // https://www.iana.org/assignments/character-sets/character-sets.xhtml
 var charsets = map[string]encoding.Encoding{
 	"ansi_x3.110-1983": charmap.ISO8859_1, // see RFC 1345 page 62, mostly superset of ISO 8859-1
-	// disabled due to https://github.com/emersion/go-message/issues/95
-	"hz-gb-2312": nil,
 }
 
 func init() {
