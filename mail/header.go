@@ -321,9 +321,15 @@ func (h *Header) GenerateMessageID() error {
 		return err
 	}
 
-	msgID := fmt.Sprintf("<%s.%s@%s>", base36.EncodeBytes(now.Bytes()), base36.EncodeBytes(nonce), hostname)
-	h.Set("Message-Id", msgID)
+	msgID := fmt.Sprintf("%s.%s@%s", base36.EncodeBytes(now.Bytes()), base36.EncodeBytes(nonce), hostname)
+	h.SetMessageID(msgID)
 	return nil
+}
+
+// SetMessageID sets the Message-ID field. id is the message identifier,
+// without the angle brackets.
+func (h *Header) SetMessageID(id string) {
+	h.Set("Message-Id", "<"+id+">")
 }
 
 // SetMsgIDList formats a list of message identifiers. Message identifiers
