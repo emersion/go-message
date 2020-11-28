@@ -74,7 +74,9 @@ func CreateWriter(w io.Writer, header Header) (*Writer, error) {
 	header = header.Copy()
 
 	// If the message uses MIME, it has to include MIME-Version
-	header.Set("MIME-Version", "1.0")
+	if !header.Has("Mime-Version") {
+		header.Set("MIME-Version", "1.0")
+	}
 
 	ww, err := createWriter(w, &header)
 	if err != nil {
