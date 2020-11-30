@@ -230,7 +230,7 @@ func BenchmarkTextprotoReadHeader(b *testing.B) {
 			var err error
 			for i := 0; i < b.N; i++ {
 				r.Reset(strings.NewReader(blob))
-				hdr, err = ReadHeader(r, nil)
+				hdr, err = ReadHeader(r)
 				if err != nil {
 					b.Fatal(err)
 				}

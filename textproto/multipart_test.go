@@ -853,19 +853,3 @@ func TestNoBoundary(t *testing.T) {
 		t.Errorf("NextPart error = %v; want %v", got, want)
 	}
 }
-
-func TestLineLimitExceeded(t *testing.T) {
-	r := strings.NewReader(testMultipartBody("\r\n"))
-	reader := NewMultipartReader(r, "MyBoundary")
-	reader.readOptions = &ReadOptions{
-		MaxHeaderLineLength: 10,
-	}
-
-	_, err := reader.NextPart()
-	if err == nil {
-		t.Fatal("expected an error")
-	}
-	if _, ok := err.(TooBigError); !ok {
-		t.Fatalf("Not TooBigError returned: %T", err)
-	}
-}
