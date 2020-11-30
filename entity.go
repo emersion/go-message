@@ -82,7 +82,7 @@ const maxHeaderBytes = 4000000
 // ReadOptions represents the options of a message reader
 type ReadOptions struct {
 	// MaxHeaderBytes is the number of bytes
-	// the reader will read from a message.
+	// the reader is allowed to read from a message.
 	// If zero, maxHeaderBytes is used.
 	MaxHeaderBytes int64
 }
