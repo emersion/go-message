@@ -51,6 +51,11 @@ var testCharsets = []struct {
 		encoded: []byte{178, 226, 202, 212},
 		decoded: "测试",
 	},
+	{
+		charset: "iso8859-2",
+		encoded: []byte{0x63, 0x61, 0x66, 0xE9, 0x20, 0xfb},
+		decoded: "café ű",
+	},
 }
 
 func TestCharsetReader(t *testing.T) {
@@ -74,13 +79,10 @@ func TestCharsetReader(t *testing.T) {
 }
 
 func TestDisabledCharsetReader(t *testing.T) {
-	_, err := Reader("hz-gb-2312", strings.NewReader("Some dummy text"))
+	charsets["DISABLED"] = nil
+
+	_, err := Reader("DISABLED", strings.NewReader("Some dummy text"))
 	if err == nil {
-		t.Errorf("%v encoding is disabled and should give an error", "hz-gb-2312")
-		return
-	}
-	if !strings.HasSuffix(err.Error(), "unsupported charset") {
-		t.Errorf("expected error to end in 'unsupported charset', got %v",
-			err.Error())
+		t.Errorf("Reader(): expected disabled charset to return an error")
 	}
 }

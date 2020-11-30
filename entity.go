@@ -37,7 +37,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	if !strings.HasPrefix(mediaType, "multipart/") {
 		enc := header.Get("Content-Transfer-Encoding")
 		if decoded, encErr := encodingReader(enc, body); encErr != nil {
-			err = unknownEncodingError{encErr}
+			err = UnknownEncodingError{encErr}
 		} else {
 			body = decoded
 		}
@@ -47,7 +47,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	if strings.HasPrefix(mediaType, "text/") {
 		if ch, ok := mediaParams["charset"]; ok {
 			if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
-				err = unknownCharsetError{charsetErr}
+				err = UnknownCharsetError{charsetErr}
 			} else {
 				body = converted
 			}
@@ -102,8 +102,8 @@ func ReadWithOptions(r io.Reader, options *ReadOptions) (*Entity, error) {
 // message header.
 //
 // If the message uses an unknown transfer encoding or charset, Read returns an
-// error that verifies IsUnknownCharset, but also returns an Entity that can
-// be read.
+// error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
+// an Entity that can be read.
 func Read(r io.Reader) (*Entity, error) {
 	br := bufio.NewReader(r)
 	h, err := textproto.ReadHeader(br, nil)
@@ -146,4 +146,71 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	defer ew.Close()
 
 	return e.writeBodyTo(ew)
+}
+
+// WalkFunc is the type of the function called for each part visited by Walk.
+//
+// The path argument is a list of multipart indices leading to the part. The
+// root part has a nil path.
+//
+// If there was an encoding error walking to a part, the incoming error will
+// describe the problem and the function can decide how to handle that error.
+//
+// Unlike IMAP part paths, indices start from 0 (instead of 1) and a
+// non-multipart message has a nil path (instead of {1}).
+//
+// If an error is returned, processing stops.
+type WalkFunc func(path []int, entity *Entity, err error) error
+
+// Walk walks the entity's multipart tree, calling walkFunc for each part in
+// the tree, including the root entity.
+//
+// Walk consumes the entity.
+func (e *Entity) Walk(walkFunc WalkFunc) error {
+	var multipartReaders []MultipartReader
+	var path []int
+	part := e
+	for {
+		var err error
+		if part == nil {
+			if len(multipartReaders) == 0 {
+				break
+			}
+
+			// Get the next part from the last multipart reader
+			mr := multipartReaders[len(multipartReaders)-1]
+			part, err = mr.NextPart()
+			if err == io.EOF {
+				multipartReaders = multipartReaders[:len(multipartReaders)-1]
+				path = path[:len(path)-1]
+				continue
+			} else if IsUnknownEncoding(err) || IsUnknownCharset(err) {
+				// Forward the error to walkFunc
+			} else if err != nil {
+				return err
+			}
+
+			path[len(path)-1]++
+		}
+
+		// Copy the path since we'll mutate it on the next iteration
+		var pathCopy []int
+		if len(path) > 0 {
+			pathCopy = make([]int, len(path))
+			copy(pathCopy, path)
+		}
+
+		if err := walkFunc(pathCopy, part, err); err != nil {
+			return err
+		}
+
+		if mr := part.MultipartReader(); mr != nil {
+			multipartReaders = append(multipartReaders, mr)
+			path = append(path, -1)
+		}
+
+		part = nil
+	}
+
+	return nil
 }

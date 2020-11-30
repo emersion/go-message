@@ -1,21 +1,27 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"strings"
 )
 
-type unknownCharsetError struct {
-	error
+type UnknownCharsetError struct {
+	e error
+}
+
+func (u UnknownCharsetError) Unwrap() error { return u.e }
+
+func (u UnknownCharsetError) Error() string {
+	return "unknown charset: " + u.e.Error()
 }
 
 // IsUnknownCharset returns a boolean indicating whether the error is known to
 // report that the charset advertised by the entity is unknown.
 func IsUnknownCharset(err error) bool {
-	_, ok := err.(unknownCharsetError)
-	return ok
+	return errors.As(err, new(UnknownCharsetError))
 }
 
 // CharsetReader, if non-nil, defines a function to generate charset-conversion
@@ -35,9 +41,13 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 		return input, nil
 	}
 	if CharsetReader != nil {
-		return CharsetReader(charset, input)
+		r, err := CharsetReader(charset, input)
+		if err != nil {
+			return r, UnknownCharsetError{err}
+		}
+		return r, nil
 	}
-	return input, fmt.Errorf("message: unhandled charset %q", charset)
+	return input, UnknownCharsetError{fmt.Errorf("message: unhandled charset %q", charset)}
 }
 
 // decodeHeader decodes an internationalized header field. If it fails, it

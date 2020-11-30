@@ -141,13 +141,29 @@ func (h *Header) Get(k string) string {
 // The returned slice should not be modified and becomes invalid when the
 // header is updated.
 //
-// Error is returned if header contains incorrect characters (RFC 6532)
+// Error is returned if header contains incorrect characters (RFC 6532).
 func (h *Header) Raw(k string) ([]byte, error) {
 	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
 	if len(fields) == 0 {
 		return nil, nil
 	}
 	return fields[len(fields)-1].raw()
+}
+
+// Values returns all values associated with the given key.
+//
+// The returned slice should not be modified and becomes invalid when the
+// header is updated.
+func (h *Header) Values(k string) []string {
+	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
+	if len(fields) == 0 {
+		return nil
+	}
+	l := make([]string, len(fields))
+	for i, field := range fields {
+		l[len(fields)-i-1] = field.v
+	}
+	return l
 }
 
 // Set sets the header fields associated with key to the single field value.

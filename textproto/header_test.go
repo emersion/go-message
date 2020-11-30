@@ -80,6 +80,14 @@ func TestHeader(t *testing.T) {
 	if h.FieldsByKey("X-I-Dont-Exist").Next() {
 		t.Errorf("FieldsByKey(non-existing).Next() returned true, want false")
 	}
+
+	want = []string{
+		"from example.com by example.org",
+		"from localhost by example.com",
+	}
+	if l := h.Values("Received"); !reflect.DeepEqual(l, want) {
+		t.Errorf("Values(\"Received\") reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
 }
 
 func TestHeader_Set(t *testing.T) {
@@ -488,7 +496,7 @@ func TestWriteHeader_continued(t *testing.T) {
 }
 
 var incorrectFormatHeaderFieldTests = []struct {
-	k, v      string
+	k, v string
 }{
 	{
 		k: "DKIM Signature",
@@ -530,7 +538,7 @@ func TestWriteHeader_failed(t *testing.T) {
 }
 
 var incorrectFormatMultipleHeaderFieldTests = []struct {
-	k1, k2, v1, v2      string
+	k1, k2, v1, v2 string
 }{
 	{
 		// Incorrect first

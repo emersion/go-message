@@ -1,15 +1,20 @@
 package mail
 
 import (
+	"bytes"
+	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"net/mail"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/emersion/go-message"
+	"github.com/martinlindhe/base36"
 )
 
 const dateLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
@@ -227,7 +232,7 @@ func (h *Header) AddressList(key string) ([]*Address, error) {
 	if v == "" {
 		return nil, nil
 	}
-	return parseAddressList(v)
+	return ParseAddressList(v)
 }
 
 // SetAddressList formats the named header field to the provided list of
@@ -297,4 +302,49 @@ func (h *Header) MsgIDList(key string) ([]string, error) {
 	}
 
 	return l, nil
+}
+
+// GenerateMessageID generates an RFC 2822-compliant Message-Id based on the
+// informational draft "Recommendations for generating Message IDs", for lack
+// of a better authoritative source.
+func (h *Header) GenerateMessageID() error {
+	now := bytes.NewBuffer(make([]byte, 0, 8))
+	binary.Write(now, binary.BigEndian, time.Now().UnixNano())
+
+	nonce := make([]byte, 8)
+	if _, err := rand.Read(nonce); err != nil {
+		return err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+
+	msgID := fmt.Sprintf("%s.%s@%s", base36.EncodeBytes(now.Bytes()), base36.EncodeBytes(nonce), hostname)
+	h.SetMessageID(msgID)
+	return nil
+}
+
+// SetMessageID sets the Message-ID field. id is the message identifier,
+// without the angle brackets.
+func (h *Header) SetMessageID(id string) {
+	h.Set("Message-Id", "<"+id+">")
+}
+
+// SetMsgIDList formats a list of message identifiers. Message identifiers
+// don't include angle brackets.
+//
+// This can be used on In-Reply-To and References header fields.
+func (h *Header) SetMsgIDList(key string, l []string) {
+	var v string
+	if len(l) > 0 {
+		v = "<" + strings.Join(l, "> <") + ">"
+	}
+	h.Set(key, v)
+}
+
+// Copy creates a stand-aline copy of the header.
+func (h *Header) Copy() Header {
+	return Header{h.Header.Copy()}
 }

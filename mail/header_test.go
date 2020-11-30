@@ -1,6 +1,7 @@
 package mail_test
 
 import (
+	netmail "net/mail"
 	"reflect"
 	"testing"
 	"time"
@@ -125,5 +126,53 @@ func TestHeader_MsgIDList(t *testing.T) {
 		} else if !reflect.DeepEqual(msgIDs, test.msgIDs) {
 			t.Errorf("Failed to parse In-Reply-To %q: Header.MsgIDList() = %q, want %q", test.raw, msgIDs, test.msgIDs)
 		}
+	}
+}
+
+func TestHeader_GenerateMessageID(t *testing.T) {
+	var h mail.Header
+	if err := h.GenerateMessageID(); err != nil {
+		t.Fatalf("Header.GenerateMessageID() = %v", err)
+	}
+	if _, err := h.MessageID(); err != nil {
+		t.Errorf("Failed to parse generated Message-Id: Header.MessageID() = %v", err)
+	}
+}
+
+func TestHeader_SetMsgIDList(t *testing.T) {
+	tests := []struct {
+		raw    string
+		msgIDs []string
+	}{
+		{"", nil},
+		{"<123@asdf>", []string{"123@asdf"}},
+		{"<123@asdf> <456@asdf>", []string{"123@asdf", "456@asdf"}},
+	}
+	for _, test := range tests {
+		var h mail.Header
+		h.SetMsgIDList("In-Reply-To", test.msgIDs)
+		raw := h.Get("In-Reply-To")
+		if raw != test.raw {
+			t.Errorf("Failed to format In-Reply-To %q: Header.Get() = %q, want %q", test.msgIDs, raw, test.raw)
+		}
+	}
+}
+
+func TestHeader_CanUseNetMailAddress(t *testing.T) {
+	netfrom := []*netmail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
+	mailfrom := []*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}
+
+	//sanity check that they types are identical
+	if !reflect.DeepEqual(netfrom, mailfrom) {
+		t.Error("[]*net/mail.Address differs from []*mail.Address")
+	}
+
+	//roundtrip
+	var h mail.Header
+	h.SetAddressList("From", netfrom)
+	if got, err := h.AddressList("From"); err != nil {
+		t.Error("Expected no error while parsing header address list, got:", err)
+	} else if !reflect.DeepEqual(got, netfrom) {
+		t.Errorf("Expected header address list to be %v, but got %v", netfrom, got)
 	}
 }
