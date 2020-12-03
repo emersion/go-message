@@ -87,8 +87,8 @@ type ReadOptions struct {
 	MaxHeaderBytes int
 }
 
-// ReadWithOptions is a mirror of Read to read a message from r with options.
-// Additionally, ReadWithOptions uses reader options to manipulate header size limit.
+// ReadWithOptions reads a message from r. ReadOptions is used to
+// manipulate header size limit.
 func ReadWithOptions(r io.Reader, options *ReadOptions) (*Entity, error) {
 	// set default options
 	if options == nil {
@@ -98,6 +98,8 @@ func ReadWithOptions(r io.Reader, options *ReadOptions) (*Entity, error) {
 		options.MaxHeaderBytes = defaultMaxHeaderBytes
 	}
 
+	// use options.MaxHeaderBytes to set initial buffer size
+	// utilize this value in ReadHeader to validate header size
 	br := bufio.NewReaderSize(r, options.MaxHeaderBytes)
 	h, err := textproto.ReadHeader(br)
 	if err != nil {

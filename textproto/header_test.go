@@ -235,7 +235,6 @@ func TestReadHeader_TooBig(t *testing.T) {
 		"Received: from localhost by example.com\r\n" +
 		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 4000) + "\r\n" +
 		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
-
 	_, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
 	if err == nil {
 		t.Fatalf("ReadHeader() succeeded")
@@ -244,7 +243,6 @@ func TestReadHeader_TooBig(t *testing.T) {
 		t.Fatalf("Not TooBigError returned: %T", err)
 	}
 
-	// expect no error when limit is greater than header size
 	_, err = ReadHeader(bufio.NewReaderSize(strings.NewReader(testHeader), 5000))
 	if err != nil {
 		t.Fatalf("readHeader() returned error: %v", err)
