@@ -77,26 +77,28 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 	return New(header, r)
 }
 
-const maxHeaderBytes = 4000000
+const defaultMaxHeaderBytes = 1 << 20 // 1 MB
 
 // ReadOptions represents the options of a message reader
 type ReadOptions struct {
 	// MaxHeaderBytes is the number of bytes
 	// the reader is allowed to read from a message.
-	// If zero, maxHeaderBytes is used.
-	MaxHeaderBytes int64
+	// If zero, defaultMaxHeaderBytes is used.
+	MaxHeaderBytes int
 }
 
 // ReadWithOptions is a mirror of Read to read a message from r with options.
+// Additionally, ReadWithOptions uses reader options to manipulate header size limit.
 func ReadWithOptions(r io.Reader, options *ReadOptions) (*Entity, error) {
+	// set default options
 	if options == nil {
 		options = &ReadOptions{}
 	}
 	if options.MaxHeaderBytes == 0 {
-		options.MaxHeaderBytes = maxHeaderBytes
+		options.MaxHeaderBytes = defaultMaxHeaderBytes
 	}
 
-	br := bufio.NewReader(io.LimitReader(r, options.MaxHeaderBytes))
+	br := bufio.NewReaderSize(r, options.MaxHeaderBytes)
 	h, err := textproto.ReadHeader(br)
 	if err != nil {
 		return nil, err
@@ -113,13 +115,7 @@ func ReadWithOptions(r io.Reader, options *ReadOptions) (*Entity, error) {
 // error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
 // an Entity that can be read.
 func Read(r io.Reader) (*Entity, error) {
-	br := bufio.NewReader(io.LimitReader(r, maxHeaderBytes))
-	h, err := textproto.ReadHeader(br)
-	if err != nil {
-		return nil, err
-	}
-
-	return New(Header{h}, br)
+	return ReadWithOptions(r, nil)
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's

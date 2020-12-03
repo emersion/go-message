@@ -367,6 +367,16 @@ func (h *Header) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
 
+// TooBigError is returned by ReadHeader if one of header components are larger
+// than allowed.
+type TooBigError struct {
+	desc string
+}
+
+func (err TooBigError) Error() string {
+	return "textproto: length limit exceeded: " + err.desc
+}
+
 func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
@@ -490,6 +500,9 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		return newHeader(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
 	}
 
+	var n int
+	limit := r.Size()
+
 	for {
 		var (
 			kv  []byte
@@ -501,6 +514,11 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 				err = nil
 			}
 			return newHeader(fs), err
+		}
+
+		n += len(kv)
+		if n > limit {
+			return newHeader(fs), TooBigError{"header size"}
 		}
 
 		// Key ends at first colon; should not have trailing spaces but they

@@ -171,6 +171,7 @@ func TestReadWithOptions_multipart(t *testing.T) {
 
 	testMultipart(t, e)
 
+	// Setting MaxHeaderBytes to a low value does not affect reading the body
 	e, err = ReadWithOptions(strings.NewReader(testMultipartText), &ReadOptions{
 		MaxHeaderBytes: 100,
 	})
@@ -183,9 +184,8 @@ func TestReadWithOptions_multipart(t *testing.T) {
 		t.Fatal("Expected no error while reading body, got", err)
 	}
 
-	expected := "--IMTHEBOUNDARY\r\nC"
-	if s := string(buf); s != expected {
-		t.Errorf("Expected body to be:\n%s\nbut got:\n%s", expected, s)
+	if s := string(buf); s != testMultipartBody {
+		t.Errorf("Expected body to be:\n%s\nbut got:\n%s", testMultipartBody, s)
 	}
 }
 

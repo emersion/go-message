@@ -230,21 +230,24 @@ func TestInvalidHeader(t *testing.T) {
 	}
 }
 
-func TestReadHeader_LimitReader(t *testing.T) {
+func TestReadHeader_TooBig(t *testing.T) {
 	testHeader := "Received: from example.com by example.org\r\n" +
 		"Received: from localhost by example.com\r\n" +
 		"To: Taki Tachibana <taki.tachibana@example.org> " + strings.Repeat("A", 4000) + "\r\n" +
 		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>\r\n\r\n"
-	h, err := ReadHeader(bufio.NewReader(io.LimitReader(strings.NewReader(testHeader), 140)))
-	if err != nil {
-		t.Fatalf("readHeader() returned error: %v", err)
+
+	_, err := ReadHeader(bufio.NewReader(strings.NewReader(testHeader)))
+	if err == nil {
+		t.Fatalf("ReadHeader() succeeded")
 	}
-	if n := 3; len(h.l) != n {
-		t.Errorf("Expected to have %d headers but got %d headers", n, len(h.l))
+	if _, ok := err.(TooBigError); !ok {
+		t.Fatalf("Not TooBigError returned: %T", err)
 	}
 
-	if s := "Taki Tachibana <taki.tachibana@example.org> AAAAAAAA"; s != h.l[0].v {
-		t.Errorf("Expected header to be \n%v\n but got \n%v", s, h.l[0].v)
+	// expect no error when limit is greater than header size
+	_, err = ReadHeader(bufio.NewReaderSize(strings.NewReader(testHeader), 5000))
+	if err != nil {
+		t.Fatalf("readHeader() returned error: %v", err)
 	}
 }
 
