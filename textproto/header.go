@@ -380,14 +380,13 @@ func (err TooBigError) Error() string {
 func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
+		line = append(line, l...)
 		if err != nil {
-			return nil, err
+			return line, err
 		}
 
-		line = append(line, l...)
-
 		if len(line) > maxLineOctets {
-			return nil, TooBigError{"line"}
+			return line, TooBigError{"line"}
 		}
 
 		if !more {
