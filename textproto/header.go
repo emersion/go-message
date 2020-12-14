@@ -434,7 +434,10 @@ func readContinuedLineSlice(r *bufio.Reader, maxLines int) (int, []byte, error) 
 	// Read the first line. We preallocate slice that it enough
 	// for most fields.
 	line, err := readLineSlice(r, make([]byte, 0, 256))
-	if err != nil {
+	if err == io.EOF && len(line) == 0 {
+		// Header without a body
+		return 0, nil, nil
+	} else if err != nil {
 		return 0, nil, err
 	}
 
@@ -528,9 +531,6 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		)
 		maxLines, kv, err = readContinuedLineSlice(r, maxLines)
 		if len(kv) == 0 {
-			if err == io.EOF {
-				err = nil
-			}
 			return newHeader(fs), err
 		}
 
