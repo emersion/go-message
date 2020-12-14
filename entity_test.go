@@ -152,6 +152,16 @@ func TestRead_single(t *testing.T) {
 	}
 }
 
+func TestRead_tooBig(t *testing.T) {
+	raw := "Subject: " + strings.Repeat("A", 4096 * 1024) + "\r\n" +
+		"\r\n" +
+		"This header is too big.\r\n"
+	_, err := Read(strings.NewReader(raw))
+	if err != errHeaderTooBig {
+		t.Fatalf("Read() = %q, want %q", err, errHeaderTooBig)
+	}
+}
+
 func TestEntity_WriteTo_decode(t *testing.T) {
 	e := testMakeEntity()
 
