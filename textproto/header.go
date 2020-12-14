@@ -367,26 +367,12 @@ func (h *Header) FieldsByKey(k string) HeaderFields {
 	return &headerFieldsByKey{h, textproto.CanonicalMIMEHeaderKey(k), -1}
 }
 
-// TooBigError is returned by ReadHeader if one of header components are larger
-// than allowed.
-type TooBigError struct {
-	desc string
-}
-
-func (err TooBigError) Error() string {
-	return "textproto: length limit exceeded: " + err.desc
-}
-
 func readLineSlice(r *bufio.Reader, line []byte) ([]byte, error) {
 	for {
 		l, more, err := r.ReadLine()
 		line = append(line, l...)
 		if err != nil {
 			return line, err
-		}
-
-		if len(line) > maxLineOctets {
-			return line, TooBigError{"line"}
 		}
 
 		if !more {
@@ -429,24 +415,19 @@ func hasContinuationLine(r *bufio.Reader) bool {
 	return isSpace(c)
 }
 
-func readContinuedLineSlice(r *bufio.Reader, maxLines int) (int, []byte, error) {
+func readContinuedLineSlice(r *bufio.Reader) ([]byte, error) {
 	// Read the first line. We preallocate slice that it enough
 	// for most fields.
 	line, err := readLineSlice(r, make([]byte, 0, 256))
 	if err == io.EOF && len(line) == 0 {
 		// Header without a body
-		return 0, nil, nil
+		return nil, nil
 	} else if err != nil {
-		return 0, nil, err
-	}
-
-	maxLines--
-	if maxLines <= 0 {
-		return 0, nil, TooBigError{"lines"}
+		return nil, err
 	}
 
 	if len(line) == 0 { // blank line - no continuation
-		return maxLines, line, nil
+		return line, nil
 	}
 
 	line = append(line, '\r', '\n')
@@ -458,15 +439,10 @@ func readContinuedLineSlice(r *bufio.Reader, maxLines int) (int, []byte, error) 
 			break // bufio will keep err until next read.
 		}
 
-		maxLines--
-		if maxLines <= 0 {
-			return 0, nil, TooBigError{"lines"}
-		}
-
 		line = append(line, '\r', '\n')
 	}
 
-	return maxLines, line, nil
+	return line, nil
 }
 
 func writeContinued(b *strings.Builder, l []byte) {
@@ -501,13 +477,12 @@ func trimAroundNewlines(v []byte) string {
 	return b.String()
 }
 
-const (
-	maxHeaderLines = 1000
-	maxLineOctets  = 4000
-)
-
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
 // continued Key: Value lines ending in a blank line.
+//
+// To avoid denial of service attacks, the provided bufio.Reader should be
+// reading from an io.LimitedReader or a similar Reader to bound the size of
+// headers.
 func ReadHeader(r *bufio.Reader) (Header, error) {
 	fs := make([]*headerField, 0, 32)
 
@@ -521,14 +496,12 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		return newHeader(fs), fmt.Errorf("message: malformed MIME header initial line: %v", string(line))
 	}
 
-	maxLines := maxHeaderLines
-
 	for {
 		var (
 			kv  []byte
 			err error
 		)
-		maxLines, kv, err = readContinuedLineSlice(r, maxLines)
+		kv, err = readContinuedLineSlice(r)
 		if len(kv) == 0 {
 			return newHeader(fs), err
 		}
