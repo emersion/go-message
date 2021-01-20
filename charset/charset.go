@@ -28,10 +28,11 @@ var charsets = map[string]encoding.Encoding{
 
 func init() {
 	message.CharsetReader = Reader
+	message.CharsetWriter = Writer
 }
 
-// Reader returns an io.Reader that converts the provided charset to UTF-8.
-func Reader(charset string, input io.Reader) (io.Reader, error) {
+// chooseEncoding returns the encoder for the given charset.
+func chooseEncoding(charset string) (encoding.Encoding, error) {
 	var err error
 	enc, ok := charsets[strings.ToLower(charset)]
 	if ok && enc == nil {
@@ -52,7 +53,26 @@ func Reader(charset string, input io.Reader) (io.Reader, error) {
 	if enc == nil {
 		return nil, fmt.Errorf("charset %q: unsupported charset", charset)
 	}
+
+	return enc, nil
+}
+
+// Reader returns an io.Reader that converts the provided charset to UTF-8.
+func Reader(charset string, input io.Reader) (io.Reader, error) {
+	enc, err := chooseEncoding(charset)
+	if err != nil {
+		return nil, err
+	}
 	return enc.NewDecoder().Reader(input), nil
+}
+
+// Writer returns an io.Writer that converts UTF-8 to the provided charset.
+func Writer(charset string, output io.Writer) (io.Writer, error) {
+	enc, err := chooseEncoding(charset)
+	if err != nil {
+		return nil, err
+	}
+	return enc.NewEncoder().Writer(output), nil
 }
 
 // RegisterEncoding registers an encoding. This is intended to be called from

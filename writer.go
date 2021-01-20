@@ -2,7 +2,6 @@ package message
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 
@@ -29,6 +28,11 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 	ww := &Writer{w: w}
 
 	mediaType, mediaParams, _ := header.ContentType()
+	w, err := charsetWriter(mediaParams["charset"], ww.w)
+	if err != nil {
+		return nil, err
+	}
+
 	if strings.HasPrefix(mediaType, "multipart/") {
 		ww.mw = textproto.NewMultipartWriter(ww.w)
 
@@ -52,14 +56,6 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 		}
 		ww.w = wc
 		ww.c = wc
-	}
-
-	switch strings.ToLower(mediaParams["charset"]) {
-	case "", "us-ascii", "utf-8":
-		// This is OK
-	default:
-		// Anything else is invalid
-		return nil, fmt.Errorf("unhandled charset %q", mediaParams["charset"])
 	}
 
 	return ww, nil

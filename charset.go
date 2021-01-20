@@ -26,13 +26,22 @@ func IsUnknownCharset(err error) bool {
 
 // CharsetReader, if non-nil, defines a function to generate charset-conversion
 // readers, converting from the provided charset into UTF-8. Charsets are always
-// lower-case. utf-8 and us-ascii charsets are handled by default. One of the
+// lower-case. The utf-8 and us-ascii charsets are handled by default. One of
 // the CharsetReader's result values must be non-nil.
 //
 // Importing github.com/emersion/go-message/charset will set CharsetReader to
 // a function that handles most common charsets. Alternatively, CharsetReader
 // can be set to e.g. golang.org/x/net/html/charset.NewReaderLabel.
 var CharsetReader func(charset string, input io.Reader) (io.Reader, error)
+
+// CharsetWriter, if non-nil, defines a function to generate charset-conversion
+// writers, converting from UTF-8 into the provided charset. Charsets are always
+// lower-case.  The utf-8 and us-ascii charsets are handled by default.
+//
+// Importing github.com/emersion/go-message/charset will set CharsetReader to
+// a function that handles most common charsets. Alternatively, CharsetReader
+// can be set to e.g. golang.org/x/net/html/charset.NewReaderLabel.
+var CharsetWriter func(charset string, output io.Writer) (io.Writer, error)
 
 // charsetReader calls CharsetReader if non-nil.
 func charsetReader(charset string, input io.Reader) (io.Reader, error) {
@@ -48,6 +57,22 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 		return r, nil
 	}
 	return input, UnknownCharsetError{fmt.Errorf("message: unhandled charset %q", charset)}
+}
+
+// charsetWriter calls CharsetWriter if non-nil.
+func charsetWriter(charset string, output io.Writer) (io.Writer, error) {
+	charset = strings.ToLower(charset)
+	if charset == "" || charset == "utf-8" || charset == "us-ascii" {
+		return output, nil
+	}
+	if CharsetReader != nil {
+		r, err := CharsetWriter(charset, output)
+		if err != nil {
+			return r, UnknownCharsetError{err}
+		}
+		return r, nil
+	}
+	return output, UnknownCharsetError{fmt.Errorf("message: unhandled charset %q", charset)}
 }
 
 // decodeHeader decodes an internationalized header field. If it fails, it
