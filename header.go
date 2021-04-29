@@ -106,3 +106,11 @@ func (h *Header) Fields() HeaderFields {
 func (h *Header) FieldsByKey(k string) HeaderFields {
 	return &headerFields{h.Header.FieldsByKey(k)}
 }
+
+func (h *Header) ContentID() string {
+	return h.Get("Content-ID")
+}
+
+func (h *Header) SetContentID(t string) {
+	h.Set("Content-ID", t)
+}
