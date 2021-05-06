@@ -539,3 +539,17 @@ func TestHeaderFromMap(t *testing.T) {
 		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
 	}
 }
+
+func TestHeader_Map(t *testing.T) {
+	want := map[string][]string{
+		"Received": []string{"from example.com by example.org", "from localhost by example.com"},
+		"To":       []string{"Taki Tachibana <taki.tachibana@example.org>"},
+		"From":     []string{"Mitsuha Miyamizu <mitsuha.miyamizu@example.com>"},
+	}
+
+	h := newTestHeader()
+	m := h.Map()
+	if !reflect.DeepEqual(m, want) {
+		t.Errorf("Fields(): got \n%#v\n but want \n%#v", m, want)
+	}
+}

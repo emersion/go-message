@@ -226,6 +226,21 @@ func (h *Header) Len() int {
 	return len(h.l)
 }
 
+// Map returns all header fields as a map.
+//
+// This function is provided for interoperability with the standard library.
+// If possible, Fields should be used instead to avoid loosing information.
+// The map representation looses the ordering of the fields, the capitalization
+// of the header keys, and the whitespace of the original header.
+func (h *Header) Map() map[string][]string {
+	m := make(map[string][]string, h.Len())
+	fields := h.Fields()
+	for fields.Next() {
+		m[fields.Key()] = append(m[fields.Key()], fields.Value())
+	}
+	return m
+}
+
 // HeaderFields iterates over header fields. Its cursor starts before the first
 // field of the header. Use Next to advance from field to field.
 type HeaderFields interface {
