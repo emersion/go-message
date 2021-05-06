@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/textproto"
+	"sort"
 	"strings"
 )
 
@@ -74,10 +75,28 @@ func newHeader(fs []*headerField) Header {
 		fs[i], fs[opp] = fs[opp], fs[i]
 	}
 
-	// Populate map
-	m := makeHeaderMap(fs)
+	return Header{l: fs, m: makeHeaderMap(fs)}
+}
 
-	return Header{l: fs, m: m}
+// HeaderFromMap creates a header from a map of header fields.
+//
+// This function is provided for interoperability with the standard library.
+// If possible, ReadHeader should be used instead to avoid loosing information.
+// The map representation looses the ordering of the fields, the capitalization
+// of the header keys, and the whitespace of the original header.
+func HeaderFromMap(m map[string][]string) Header {
+	fs := make([]*headerField, 0, len(m))
+	for k, vs := range m {
+		for _, v := range vs {
+			fs = append(fs, newHeaderField(k, v, nil))
+		}
+	}
+
+	sort.SliceStable(fs, func(i, j int) bool {
+		return fs[i].k < fs[j].k
+	})
+
+	return newHeader(fs)
 }
 
 // AddRaw adds the raw key, value pair to the header.

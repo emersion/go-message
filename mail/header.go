@@ -216,6 +216,16 @@ type Header struct {
 	message.Header
 }
 
+// HeaderFromMap creates a header from a map of header fields.
+//
+// This function is provided for interoperability with the standard library.
+// If possible, ReadHeader should be used instead to avoid loosing information.
+// The map representation looses the ordering of the fields, the capitalization
+// of the header keys, and the whitespace of the original header.
+func HeaderFromMap(m map[string][]string) Header {
+	return Header{message.HeaderFromMap(m)}
+}
+
 // AddressList parses the named header field as a list of addresses. If the
 // header field is missing, it returns nil.
 //
