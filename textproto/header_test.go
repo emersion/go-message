@@ -518,3 +518,24 @@ func TestWriteHeader_failed_multiple(t *testing.T) {
 		}
 	}
 }
+
+func TestHeaderFromMap(t *testing.T) {
+	m := map[string][]string{
+		"Received": []string{"from example.com by example.org", "from localhost by example.com"},
+		"To":       []string{"Taki Tachibana <taki.tachibana@example.org>"},
+		"From":     []string{"Mitsuha Miyamizu <mitsuha.miyamizu@example.com>"},
+	}
+
+	h := HeaderFromMap(m)
+
+	l := collectHeaderFields(h.Fields())
+	want := []string{
+		"From: Mitsuha Miyamizu <mitsuha.miyamizu@example.com>",
+		"Received: from example.com by example.org",
+		"Received: from localhost by example.com",
+		"To: Taki Tachibana <taki.tachibana@example.org>",
+	}
+	if !reflect.DeepEqual(l, want) {
+		t.Errorf("Fields() reported incorrect values: got \n%#v\n but want \n%#v", l, want)
+	}
+}
