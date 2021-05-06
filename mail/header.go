@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/mail"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -212,11 +211,6 @@ func (p *headerParser) parseMsgID() (string, error) {
 	return left + "@" + right, nil
 }
 
-// TODO: this is a blunt way to strip any trailing CFWS (comment). A sharper
-// one would strip multiple CFWS, and only if really valid according to
-// RFC 5322.
-var commentRE = regexp.MustCompile(`[ \t]+\(.*\)$`)
-
 // A Header is a mail header.
 type Header struct {
 	message.Header
@@ -244,10 +238,7 @@ func (h *Header) SetAddressList(key string, addrs []*Address) {
 
 // Date parses the Date header field.
 func (h *Header) Date() (time.Time, error) {
-	// TODO: remove this once https://go-review.googlesource.com/c/go/+/117596/
-	// is released (Go 1.14)
-	date := commentRE.ReplaceAllString(h.Get("Date"), "")
-	return mail.ParseDate(date)
+	return mail.ParseDate(h.Get("Date"))
 }
 
 // SetDate formats the Date header field.
