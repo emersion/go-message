@@ -110,7 +110,7 @@ func (h *Header) AddRaw(kv []byte) {
 // fields associated with key.
 //
 // Key and value should obey character requirements of RFC 6532.
-// If you need to format/fold lines manually, use AddRaw
+// If you need to format or fold lines manually, use AddRaw.
 func (h *Header) Add(k, v string) {
 	k = textproto.CanonicalMIMEHeaderKey(k)
 
@@ -141,7 +141,8 @@ func (h *Header) Get(k string) string {
 // The returned slice should not be modified and becomes invalid when the
 // header is updated.
 //
-// Error is returned if header contains incorrect characters (RFC 6532).
+// An error is returned if the header field contains incorrect characters (see
+// RFC 6532).
 func (h *Header) Raw(k string) ([]byte, error) {
 	fields := h.m[textproto.CanonicalMIMEHeaderKey(k)]
 	if len(fields) == 0 {
@@ -478,7 +479,7 @@ func trimAroundNewlines(v []byte) string {
 }
 
 // ReadHeader reads a MIME header from r. The header is a sequence of possibly
-// continued Key: Value lines ending in a blank line.
+// continued "Key: Value" lines ending in a blank line.
 //
 // To avoid denial of service attacks, the provided bufio.Reader should be
 // reading from an io.LimitedReader or a similar Reader to bound the size of
@@ -497,11 +498,7 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 	}
 
 	for {
-		var (
-			kv  []byte
-			err error
-		)
-		kv, err = readContinuedLineSlice(r)
+		kv, err := readContinuedLineSlice(r)
 		if len(kv) == 0 {
 			return newHeader(fs), err
 		}
