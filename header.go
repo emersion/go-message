@@ -2,13 +2,44 @@ package message
 
 import (
 	"mime"
+	"strings"
 
 	"github.com/emersion/go-message/textproto"
 )
 
+// removeDuplicateParam keeps the first parameter and remove duplicate ones.
+func removeDuplicateParam(s string) string {
+	var ns string
+	m := make(map[string]string)
+
+	parts := strings.Split(s, ";")
+	for _, p := range parts {
+		kv := strings.SplitN(strings.TrimSpace(p), "=", 2)
+
+		if len(kv) == 2 {
+			if _, exists := m[kv[0]]; exists {
+				continue
+			} else {
+				m[kv[0]] = kv[1]
+				ns += p + ";"
+			}
+		} else {
+			ns += p + ";"
+		}
+	}
+
+	return ns
+}
+
 func parseHeaderWithParams(s string) (f string, params map[string]string, err error) {
 	f, params, err = mime.ParseMediaType(s)
 	if err != nil {
+		if err.Error() == "mime: duplicate parameter name" {
+			s = removeDuplicateParam(s)
+
+			return mime.ParseMediaType(s)
+		}
+
 		return s, nil, err
 	}
 	for k, v := range params {
