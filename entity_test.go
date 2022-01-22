@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -159,6 +160,16 @@ func TestRead_tooBig(t *testing.T) {
 	_, err := Read(strings.NewReader(raw))
 	if err != errHeaderTooBig {
 		t.Fatalf("Read() = %q, want %q", err, errHeaderTooBig)
+	}
+}
+
+func TestReadWithOptions_canSetMaxHeaderBytes(t *testing.T) {
+	raw := "Subject: " + strings.Repeat("A", 4096*1024) + "\r\n" +
+		"\r\n" +
+		"This header is very big, but we should allow it via options.\r\n"
+	_, err := ReadWithOptions(strings.NewReader(raw), ReadOptions{MaxHeaderBytes: math.MaxInt64})
+	if err != nil {
+		t.Fatalf("Read() = %q, want nil", err)
 	}
 }
 
