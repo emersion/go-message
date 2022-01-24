@@ -108,20 +108,25 @@ type ReadOptions struct {
 	MaxHeaderBytes int64
 }
 
-// checkValues will modify the ReadOptions struct setting defaults or special
-// values. Must be called before the ReadOptions struct is used.
-func (o *ReadOptions) checkValues() {
+// withDefaults returns a sanitised version of the options with defaults/special
+// values accounted for.
+func (o ReadOptions) withDefaults() *ReadOptions {
 	if o.MaxHeaderBytes == 0 {
 		o.MaxHeaderBytes = defaultMaxHeaderBytes
-	} else if o.MaxHeaderBytes == -1 {
+	} else if o.MaxHeaderBytes < 0 {
 		o.MaxHeaderBytes = math.MaxInt64
 	}
+	return &o
 }
 
 // ReadWithOptions see Read, but allows overriding some parameters with
 // ReadOptions.
-func ReadWithOptions(r io.Reader, opts ReadOptions) (*Entity, error) {
-	opts.checkValues()
+//
+// If the message uses an unknown transfer encoding or charset, ReadWithOptions
+// returns an error that verifies IsUnknownCharset or IsUnknownEncoding, but
+// also returns an Entity that can be read.
+func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
+	opts = opts.withDefaults()
 
 	lr := &limitedReader{R: r, N: opts.MaxHeaderBytes}
 	br := bufio.NewReader(lr)
@@ -144,7 +149,7 @@ func ReadWithOptions(r io.Reader, opts ReadOptions) (*Entity, error) {
 // error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
 // an Entity that can be read.
 func Read(r io.Reader) (*Entity, error) {
-	return ReadWithOptions(r, ReadOptions{MaxHeaderBytes: 0})
+	return ReadWithOptions(r, &ReadOptions{})
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's
