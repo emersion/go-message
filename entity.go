@@ -126,6 +126,10 @@ func (o ReadOptions) withDefaults() *ReadOptions {
 // returns an error that verifies IsUnknownCharset or IsUnknownEncoding, but
 // also returns an Entity that can be read.
 func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
+
+	if opts == nil {
+		opts = &ReadOptions{}
+	}
 	opts = opts.withDefaults()
 
 	lr := &limitedReader{R: r, N: opts.MaxHeaderBytes}

@@ -230,6 +230,16 @@ func TestReadWithOptions(t *testing.T) {
 	}
 }
 
+func TestReadWithOptions_nilDefault(t *testing.T) {
+	raw := "Subject: Something\r\n"
+	var opts *ReadOptions
+	opts = nil
+	_, err := ReadWithOptions(strings.NewReader(raw), opts)
+	if err != nil {
+		t.Fatalf("ReadWithOptions() = %v", err)
+	}
+}
+
 func TestEntity_WriteTo_decode(t *testing.T) {
 	e := testMakeEntity()
 
