@@ -79,7 +79,7 @@ func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 	return New(header, r)
 }
 
-const maxHeaderBytes = 1 << 20 // 1 MB
+const defaultMaxHeaderBytes = 1 << 20 // 1 MB
 
 var errHeaderTooBig = errors.New("message: header exceeds maximum size")
 
@@ -101,15 +101,38 @@ func (lr *limitedReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// Read reads a message from r. The message's encoding and charset are
-// automatically decoded to raw UTF-8. Note that this function only reads the
-// message header.
+type ReadOptions struct {
+	// MaxHeaderBytes limits the maximum permissible size of a message header
+	// block. If exceeded, an error will be returned.
+	// -1 == no limit, 0 == default value (1MB)
+	MaxHeaderBytes int64
+}
+
+// withDefaults returns a sanitised version of the options with defaults/special
+// values accounted for.
+func (o ReadOptions) withDefaults() *ReadOptions {
+	if o.MaxHeaderBytes == 0 {
+		o.MaxHeaderBytes = defaultMaxHeaderBytes
+	} else if o.MaxHeaderBytes < 0 {
+		o.MaxHeaderBytes = math.MaxInt64
+	}
+	return &o
+}
+
+// ReadWithOptions see Read, but allows overriding some parameters with
+// ReadOptions.
 //
-// If the message uses an unknown transfer encoding or charset, Read returns an
-// error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
-// an Entity that can be read.
-func Read(r io.Reader) (*Entity, error) {
-	lr := &limitedReader{R: r, N: maxHeaderBytes}
+// If the message uses an unknown transfer encoding or charset, ReadWithOptions
+// returns an error that verifies IsUnknownCharset or IsUnknownEncoding, but
+// also returns an Entity that can be read.
+func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
+
+	if opts == nil {
+		opts = &ReadOptions{}
+	}
+	opts = opts.withDefaults()
+
+	lr := &limitedReader{R: r, N: opts.MaxHeaderBytes}
 	br := bufio.NewReader(lr)
 
 	h, err := textproto.ReadHeader(br)
@@ -120,6 +143,17 @@ func Read(r io.Reader) (*Entity, error) {
 	lr.N = math.MaxInt64
 
 	return New(Header{h}, br)
+}
+
+// Read reads a message from r. The message's encoding and charset are
+// automatically decoded to raw UTF-8. Note that this function only reads the
+// message header.
+//
+// If the message uses an unknown transfer encoding or charset, Read returns an
+// error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
+// an Entity that can be read.
+func Read(r io.Reader) (*Entity, error) {
+	return ReadWithOptions(r, &ReadOptions{})
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's

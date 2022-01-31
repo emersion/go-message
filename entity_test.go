@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -159,6 +160,83 @@ func TestRead_tooBig(t *testing.T) {
 	_, err := Read(strings.NewReader(raw))
 	if err != errHeaderTooBig {
 		t.Fatalf("Read() = %q, want %q", err, errHeaderTooBig)
+	}
+}
+
+func TestReadOptions_withDefaults(t *testing.T) {
+	// verify that .withDefaults() doesn't mutate original values
+	original := &ReadOptions{MaxHeaderBytes: -123}
+	modified := original.withDefaults() // should set MaxHeaderBytes to math.MaxInt64
+
+	if original.MaxHeaderBytes == modified.MaxHeaderBytes {
+		t.Error("Expected ReadOptions.withDefaults() to not mutate the original value")
+	}
+}
+
+func TestReadWithOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		original *ReadOptions
+		want     *ReadOptions
+		wantErr  bool
+	}{
+		{
+			name:     "default value",
+			original: &ReadOptions{},
+			want:     &ReadOptions{MaxHeaderBytes: defaultMaxHeaderBytes},
+			wantErr:  true,
+		},
+		{
+			name:     "infinite header value",
+			original: &ReadOptions{MaxHeaderBytes: -1},
+			want:     &ReadOptions{MaxHeaderBytes: math.MaxInt64},
+			wantErr:  false,
+		},
+		{
+			name:     "infinite header value any negative",
+			original: &ReadOptions{MaxHeaderBytes: -1234},
+			want:     &ReadOptions{MaxHeaderBytes: math.MaxInt64},
+			wantErr:  false,
+		},
+		{
+			name:     "custom header value",
+			original: &ReadOptions{MaxHeaderBytes: 128},
+			want:     &ReadOptions{MaxHeaderBytes: 128},
+			wantErr:  true,
+		},
+	}
+	for _, test := range tests {
+
+		raw := "Subject: " + strings.Repeat("A", 4096*1024) + "\r\n" +
+			"\r\n" +
+			"This header is very big, but we should allow it via options.\r\n"
+
+		t.Run(test.name, func(t *testing.T) {
+
+			// First validate the options will be set as expected, or there is no
+			// point checking the ReadWithOptions func.
+			got := test.original.withDefaults()
+			if !reflect.DeepEqual(got, test.want) {
+				t.Fatalf("ReadOptions.withDefaults() =\n%#v\nbut want:\n%#v", got, test.want)
+			}
+
+			_, err := ReadWithOptions(strings.NewReader(raw), test.original)
+			gotErr := err != nil
+
+			if gotErr != test.wantErr {
+				t.Errorf("ReadWithOptions() = %t but want: %t", gotErr, test.wantErr)
+			}
+		})
+	}
+}
+
+func TestReadWithOptions_nilDefault(t *testing.T) {
+	raw := "Subject: Something\r\n"
+	var opts *ReadOptions
+	opts = nil
+	_, err := ReadWithOptions(strings.NewReader(raw), opts)
+	if err != nil {
+		t.Fatalf("ReadWithOptions() = %v", err)
 	}
 }
 
