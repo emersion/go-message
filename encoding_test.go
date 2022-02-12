@@ -71,3 +71,117 @@ func TestEncode(t *testing.T) {
 		}
 	}
 }
+
+var wrapWriterTests = []struct{
+	name   string
+	writes []string
+	out    string
+}{
+	{
+		name:   "singleLine",
+		writes: []string{"Hey"},
+		out:    "Hey",
+	},
+	{
+		name: "twoLines",
+		writes: []string{"Hey\r\nYo"},
+		out: "Hey\r\nYo",
+	},
+	{
+		name: "finalCRLF",
+		writes: []string{"Hey\r\n"},
+		out: "Hey\r\n",
+	},
+	{
+		name: "singleLineSplit",
+		writes: []string{"He", "y"},
+		out: "Hey",
+	},
+	{
+		name: "twoLinesSplit",
+		writes: []string{"He", "y", "\r\nY", "o"},
+		out: "Hey\r\nYo",
+	},
+	{
+		name: "longLine",
+		writes: []string{"How are you today?"},
+		out: "How are yo\r\nu today?",
+	},
+	{
+		name: "longLineSplit",
+		writes: []string{"How are ", "you today?"},
+		out: "How are yo\r\nu today?",
+	},
+	{
+		name: "lf",
+		writes: []string{"Hey\nYo"},
+		out: "Hey\r\nYo",
+	},
+	{
+		name: "max",
+		writes: []string{"Hey there!"},
+		out: "Hey there!",
+	},
+	{
+		name: "maxCRLF",
+		writes: []string{"Hey there!\r\n"},
+		out: "Hey there!\r\n",
+	},
+	{
+		name: "maxLF",
+		writes: []string{"Hey there!\n"},
+		out: "Hey there!\r\n",
+	},
+	{
+		name: "maxMinusOne",
+		writes: []string{"Hey there"},
+		out: "Hey there",
+	},
+	{
+		name: "maxMinusOneCRLF",
+		writes: []string{"Hey there\r\n"},
+		out: "Hey there\r\n",
+	},
+	{
+		name: "maxMinusOneLF",
+		writes: []string{"Hey there\n"},
+		out: "Hey there\r\n",
+	},
+	{
+		name: "maxPlusOne",
+		writes: []string{"Hey there!!"},
+		out: "Hey there!\r\n!",
+	},
+	{
+		name: "maxPlusTwo",
+		writes: []string{"Hey there!!!"},
+		out: "Hey there!\r\n!!",
+	},
+	{
+		name: "maxSplit",
+		writes: []string{"Hey ", "there!", "\r", "\n"},
+		out: "Hey there!\r\n",
+	},
+}
+
+func TestWrapWriter(t *testing.T) {
+	for _, test := range wrapWriterTests {
+		t.Run(test.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			ww := wrapWriter{
+				w:   &buf,
+				max: 10,
+			}
+
+			for _, s := range test.writes {
+				if _, err := ww.Write([]byte(s)); err != nil {
+					t.Fatalf("wrapWriter.Write() = %v", err)
+				}
+			}
+
+			if buf.String() != test.out {
+				t.Errorf("got %q, want %q", buf.String(), test.out)
+			}
+		})
+	}
+}
