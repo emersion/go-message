@@ -33,7 +33,8 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	case "quoted-printable":
 		dec = quotedprintable.NewReader(r)
 	case "base64":
-		dec = base64.NewDecoder(base64.StdEncoding, r)
+		wrapped := &whitespaceFilteringReader{wrapped: r}
+		dec = base64.NewDecoder(base64.StdEncoding, wrapped)
 	case "7bit", "8bit", "binary", "":
 		dec = r
 	default:
@@ -65,4 +66,29 @@ func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 		return nil, fmt.Errorf("unhandled encoding %q", enc)
 	}
 	return wc, nil
+}
+
+type whitespaceFilteringReader struct {
+	wrapped io.Reader
+}
+
+func (r *whitespaceFilteringReader) Read(p []byte) (int, error) {
+	n, err := r.wrapped.Read(p)
+	for n > 0 {
+		offset := 0
+		for i, b := range p[:n] {
+			if b != '\r' && b != '\n' && b != ' ' && b != '\t' {
+				if i != offset {
+					p[offset] = b
+				}
+				offset++
+			}
+		}
+		if offset > 0 {
+			return offset, err
+		}
+		// Previous buffer entirely whitespace, read again
+		n, err = r.wrapped.Read(p)
+	}
+	return n, err
 }
