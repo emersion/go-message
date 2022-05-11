@@ -33,7 +33,7 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	case "quoted-printable":
 		dec = quotedprintable.NewReader(r)
 	case "base64":
-		wrapped := &whitespaceFilteringReader{wrapped: r}
+		wrapped := &whitespaceReplacingReader{wrapped: r}
 		dec = base64.NewDecoder(base64.StdEncoding, wrapped)
 	case "7bit", "8bit", "binary", "":
 		dec = r
@@ -68,27 +68,21 @@ func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 	return wc, nil
 }
 
-type whitespaceFilteringReader struct {
+// whitespaceReplacingReader replaces space and tab characters with a LF so
+// base64 bodies with a continuation indent can be decoded by the base64 decoder
+// even though it is against the spec.
+type whitespaceReplacingReader struct {
 	wrapped io.Reader
 }
 
-func (r *whitespaceFilteringReader) Read(p []byte) (int, error) {
+func (r *whitespaceReplacingReader) Read(p []byte) (int, error) {
 	n, err := r.wrapped.Read(p)
-	for n > 0 {
-		offset := 0
-		for i, b := range p[:n] {
-			if b != '\r' && b != '\n' && b != ' ' && b != '\t' {
-				if i != offset {
-					p[offset] = b
-				}
-				offset++
-			}
+
+	for i := 0; i < n; i++ {
+		if p[i] == ' ' || p[i] == '\t' {
+			p[i] = '\n'
 		}
-		if offset > 0 {
-			return offset, err
-		}
-		// Previous buffer entirely whitespace, read again
-		n, err = r.wrapped.Read(p)
 	}
+
 	return n, err
 }
