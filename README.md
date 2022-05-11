@@ -3,6 +3,10 @@
 [![godocs.io](https://godocs.io/github.com/emersion/go-message?status.svg)](https://godocs.io/github.com/emersion/go-message)
 [![builds.sr.ht status](https://builds.sr.ht/~emersion/go-message/commits.svg)](https://builds.sr.ht/~emersion/go-message/commits?)
 
+This is a fork of `github.com/emersion/go-message` with some changes to handle some problems seen in real world email.
+
+---
+
 A Go library for the Internet Message Format. It implements:
 
 * [RFC 5322]: Internet Message Format
