@@ -34,7 +34,8 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	case "quoted-printable":
 		dec = quotedprintable.NewReader(r)
 	case "base64":
-		dec = base64.NewDecoder(base64.StdEncoding, r)
+		wrapped := &whitespaceReplacingReader{wrapped: r}
+		dec = base64.NewDecoder(base64.StdEncoding, wrapped)
 	case "7bit", "8bit", "binary", "":
 		dec = r
 	default:
@@ -66,4 +67,23 @@ func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 		return nil, fmt.Errorf("unhandled encoding %q", enc)
 	}
 	return wc, nil
+}
+
+// whitespaceReplacingReader replaces space and tab characters with a LF so
+// base64 bodies with a continuation indent can be decoded by the base64 decoder
+// even though it is against the spec.
+type whitespaceReplacingReader struct {
+	wrapped io.Reader
+}
+
+func (r *whitespaceReplacingReader) Read(p []byte) (int, error) {
+	n, err := r.wrapped.Read(p)
+
+	for i := 0; i < n; i++ {
+		if p[i] == ' ' || p[i] == '\t' {
+			p[i] = '\n'
+		}
+	}
+
+	return n, err
 }
