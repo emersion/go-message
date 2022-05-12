@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/quotedprintable"
+	mimeqp "mime/quotedprintable"
 	"strings"
 
+	"github.com/emersion/go-message/quotedprintable"
 	"github.com/emersion/go-textwrapper"
 )
 
@@ -54,7 +55,7 @@ func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 	var wc io.WriteCloser
 	switch strings.ToLower(enc) {
 	case "quoted-printable":
-		wc = quotedprintable.NewWriter(w)
+		wc = mimeqp.NewWriter(w)
 	case "base64":
 		wc = base64.NewEncoder(base64.StdEncoding, textwrapper.NewRFC822(w))
 	case "7bit", "8bit":
