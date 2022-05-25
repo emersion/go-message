@@ -243,7 +243,11 @@ func (h *Header) AddressList(key string) ([]*Address, error) {
 //
 // This can be used on From, Sender, Reply-To, To, Cc and Bcc header fields.
 func (h *Header) SetAddressList(key string, addrs []*Address) {
-	h.Set(key, formatAddressList(addrs))
+	if len(addrs) > 0 {
+		h.Set(key, formatAddressList(addrs))
+	} else {
+		h.Del(key)
+	}
 }
 
 // Date parses the Date header field.
