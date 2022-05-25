@@ -1,8 +1,11 @@
 package mail_test
 
 import (
+	"bufio"
+	"bytes"
 	netmail "net/mail"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -175,4 +178,40 @@ func TestHeader_CanUseNetMailAddress(t *testing.T) {
 	} else if !reflect.DeepEqual(got, netfrom) {
 		t.Errorf("Expected header address list to be %v, but got %v", netfrom, got)
 	}
+}
+
+func TestHeader_EmptyAddressList(t *testing.T) {
+	tests := []struct {
+		key   string
+		list  []*mail.Address
+		unset bool
+	}{
+		{"cc", nil, false},
+		{"to", []*mail.Address{}, false},
+		{"cc", []*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}}, true},
+	}
+
+	for _, test := range tests {
+		var h mail.Header
+		h.SetAddressList(test.key, test.list)
+		if test.unset {
+			h.SetAddressList(test.key, nil)
+		}
+		buf := bytes.NewBuffer(nil)
+		w, err := mail.CreateSingleInlineWriter(buf, h)
+		if err != nil {
+			t.Error("Expected no error while creating inline writer, got:", err)
+		}
+		if err := w.Close(); err != nil {
+			t.Error("Expected no error while closing inline writer, got:", err)
+		}
+		scanner := bufio.NewScanner(buf)
+		for scanner.Scan() {
+			line := strings.ToLower(scanner.Text())
+			if strings.HasPrefix(line, test.key) {
+				t.Error("Expected no address list header field, but got:", scanner.Text())
+			}
+		}
+	}
+
 }
