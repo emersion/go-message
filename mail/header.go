@@ -345,11 +345,11 @@ func (h *Header) SetMessageID(id string) {
 //
 // This can be used on In-Reply-To and References header fields.
 func (h *Header) SetMsgIDList(key string, l []string) {
-	var v string
 	if len(l) > 0 {
-		v = "<" + strings.Join(l, "> <") + ">"
+		h.Set(key, "<"+strings.Join(l, "> <")+">")
+	} else {
+		h.Del(key)
 	}
-	h.Set(key, v)
 }
 
 // Copy creates a stand-alone copy of the header.
