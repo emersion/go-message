@@ -101,10 +101,12 @@ func (lr *limitedReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
+// ReadOptions are options for ReadWithOptions.
 type ReadOptions struct {
 	// MaxHeaderBytes limits the maximum permissible size of a message header
 	// block. If exceeded, an error will be returned.
-	// -1 == no limit, 0 == default value (1MB)
+	//
+	// Set to -1 for no limit, set to 0 for the default value (1MB).
 	MaxHeaderBytes int64
 }
 
