@@ -38,6 +38,11 @@ var testEncodings = []struct {
 		encoded: "Y2Fmw6k=",
 		decoded: "café",
 	},
+	{ // wild emails seen with a single = terminator and no crlf
+		enc:     "quoted-printable",
+		encoded: "=",
+		decoded: "",
+	},
 }
 
 func TestDecode(t *testing.T) {

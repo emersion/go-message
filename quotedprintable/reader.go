@@ -94,7 +94,13 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 			// Check first as even a no-op Replace returns a copy which we want
 			// to avoid if possible.
 			if bytes.Contains(r.line, badSpace) {
-				r.line = bytes.ReplaceAll(r.line, []byte{'=', ' '}, []byte{'=', '3', 'D', ' '})
+				r.line = bytes.ReplaceAll(r.line, badSpace, badSpaceReplace)
+			}
+
+			// saw some cases in teh wild with the final line being '=' and
+			// no following CRLF - so add one
+			if bytes.Equal(r.line, softSuffix) {
+				r.line = []byte{'=', '\r', '\n'}
 			}
 
 			// Does the line end in CRLF instead of just LF?
