@@ -65,6 +65,7 @@ func isQPDiscardWhitespace(r rune) bool {
 var (
 	crlf            = []byte("\r\n")
 	lf              = []byte("\n")
+	crcrlf          = []byte("\r\r\n") // seen in the wild from apple mailer
 	softSuffix      = []byte("=")
 	badSpace        = []byte{'=', ' '}
 	badSpaceReplace = []byte{'=', '3', 'D', ' '}
@@ -87,7 +88,6 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 				return n, r.rerr
 			}
 			r.line, r.rerr = r.br.ReadSlice('\n')
-
 			// Handle strange case where some of our content has "= " in a random
 			// place - maybe this is not ok to do? If we see equals and a space,
 			// replace it with "=3D " so it will decode properly.
@@ -97,7 +97,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 				r.line = bytes.ReplaceAll(r.line, badSpace, badSpaceReplace)
 			}
 
-			// saw some cases in teh wild with the final line being '=' and
+			// saw some cases in the wild with the final line being '=' and
 			// no following CRLF - so add one
 			if bytes.Equal(r.line, softSuffix) {
 				r.line = []byte{'=', '\r', '\n'}
@@ -110,8 +110,8 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 			r.line = bytes.TrimRightFunc(wholeLine, isQPDiscardWhitespace)
 			if bytes.HasSuffix(r.line, softSuffix) {
 				rightStripped := wholeLine[len(r.line):]
-				r.line = r.line[:len(r.line)-1]
-				if !bytes.HasPrefix(rightStripped, lf) && !bytes.HasPrefix(rightStripped, crlf) &&
+				r.line = r.line[:len(r.line)-1] // remove the soft = character from the line
+				if !bytes.HasPrefix(rightStripped, lf) && !bytes.HasPrefix(rightStripped, crlf) && !bytes.HasPrefix(rightStripped, crcrlf) &&
 					!(len(rightStripped) == 0 && len(r.line) > 0 && r.rerr == io.EOF) {
 					r.rerr = fmt.Errorf("quotedprintable: invalid bytes after =: %q", rightStripped)
 				}
