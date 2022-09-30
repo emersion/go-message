@@ -88,6 +88,18 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 				return n, r.rerr
 			}
 			r.line, r.rerr = r.br.ReadSlice('\n')
+
+			// handle long lines - this is slower
+			if r.rerr == bufio.ErrBufferFull {
+				r.rerr = nil
+				originalLine := make([]byte, len(r.line))
+				_ = copy(originalLine, r.line) // copy as next read will overwrite
+
+				var restOfLine []byte
+				restOfLine, r.rerr = r.br.ReadBytes('\n')
+				r.line = bytes.Join([][]byte{originalLine, restOfLine}, nil)
+			}
+
 			// Handle strange case where some of our content has "= " in a random
 			// place - maybe this is not ok to do? If we see equals and a space,
 			// replace it with "=3D " so it will decode properly.
