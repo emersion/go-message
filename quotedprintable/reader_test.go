@@ -71,6 +71,9 @@ func TestTolerantReader(t *testing.T) {
 			want: "Now's the time for all folk to come to the aid of their country."},
 		{in: "accept UTF-8 right quotation mark: ’",
 			want: "accept UTF-8 right quotation mark: ’"},
+
+		// INGSVC-1705 fix for == in some incorrectly encoded data
+		{in: "foo bar==", want: "foo bar=="},
 	}
 
 	for _, tt := range tests {

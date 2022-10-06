@@ -63,12 +63,14 @@ func isQPDiscardWhitespace(r rune) bool {
 }
 
 var (
-	crlf            = []byte("\r\n")
-	lf              = []byte("\n")
-	crcrlf          = []byte("\r\r\n") // seen in the wild from apple mailer
-	softSuffix      = []byte("=")
-	badSpace        = []byte{'=', ' '}
-	badSpaceReplace = []byte{'=', '3', 'D', ' '}
+	crlf                   = []byte("\r\n")
+	lf                     = []byte("\n")
+	crcrlf                 = []byte("\r\r\n") // seen in the wild from apple mailer
+	softSuffix             = []byte("=")
+	badSpace               = []byte{'=', ' '}
+	badSpaceReplace        = []byte{'=', '3', 'D', ' '}
+	badDoubleEquals        = []byte{'=', '='}
+	badDoubleEqualsReplace = []byte{'=', '3', 'D', '=', '3', 'D'}
 )
 
 // Read reads and decodes quoted-printable data from the underlying reader.
@@ -107,6 +109,11 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 			// to avoid if possible.
 			if bytes.Contains(r.line, badSpace) {
 				r.line = bytes.ReplaceAll(r.line, badSpace, badSpaceReplace)
+			}
+
+			// Handle strange case where things say there are qouted printable but they are base64 encoded so end in ==
+			if bytes.Contains(r.line, badDoubleEquals) {
+				r.line = bytes.ReplaceAll(r.line, badDoubleEquals, badDoubleEqualsReplace)
 			}
 
 			// saw some cases in the wild with the final line being '=' and
