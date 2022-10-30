@@ -215,3 +215,34 @@ func TestHeader_EmptyAddressList(t *testing.T) {
 	}
 
 }
+
+func TestHeader_EncodedAddressList(t *testing.T) {
+	tests := []struct {
+		list []*mail.Address
+		want []*mail.Address
+	}{
+		{
+			[]*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}},
+			[]*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}},
+		},
+		{
+			[]*mail.Address{{"=?utf-8?Q?Mitsuha?= Miyamizu", "mitsuha.miyamizu@example.org"}, {"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}},
+			[]*mail.Address{{"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}, {"Mitsuha Miyamizu", "mitsuha.miyamizu@example.org"}},
+		},
+		{
+			[]*mail.Address{{"=?wrongencoding?Q?Mitsuha?= Miyamizu", "mitsuha.miyamizu@example.org"}},
+			[]*mail.Address{{"=?wrongencoding?Q?Mitsuha?= Miyamizu", "mitsuha.miyamizu@example.org"}},
+		},
+	}
+
+	for _, test := range tests {
+		var h mail.Header
+		h.SetAddressList("From", test.list)
+		if got, err := h.AddressList("From"); err != nil {
+			t.Error("Expected no error while parsing header address list, got:", err)
+		} else if !reflect.DeepEqual(got, test.want) {
+			t.Errorf("Expected header address list to be %v, but got %v", test.want, got)
+		}
+	}
+
+}

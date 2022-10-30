@@ -231,7 +231,10 @@ func HeaderFromMap(m map[string][]string) Header {
 //
 // This can be used on From, Sender, Reply-To, To, Cc and Bcc header fields.
 func (h *Header) AddressList(key string) ([]*Address, error) {
-	v := h.Get(key)
+	v, err := h.Text(key)
+	if err != nil {
+		v = h.Get(key)
+	}
 	if v == "" {
 		return nil, nil
 	}
