@@ -272,13 +272,12 @@ func (r *MultipartReader) NextPart() (*Part, error) {
 			return bp, nil
 		}
 
-		if r.isFinalBoundary(line) {
+		// Only return EOF if we've reached the final boundary that we are looking for, and are not expecting any
+		// further parts to the multipart encoding. This prevents the parser from stopping too soon during nested
+		// multipart boundaries https://www.rfc-editor.org/rfc/rfc2046#section-5.1
+		if r.isFinalBoundary(line) && !expectNewPart {
 			// Expected EOF
 			return nil, io.EOF
-		}
-
-		if expectNewPart {
-			return nil, fmt.Errorf("multipart: expecting a new Part; got line %q", string(line))
 		}
 
 		if r.partsRead == 0 {
@@ -292,6 +291,10 @@ func (r *MultipartReader) NextPart() (*Part, error) {
 		// end boundary)
 		if bytes.Equal(line, r.nl) {
 			expectNewPart = true
+			continue
+		}
+
+		if expectNewPart {
 			continue
 		}
 
