@@ -206,6 +206,12 @@ func (e *Entity) WriteTo(w io.Writer) error {
 // If an error is returned, processing stops.
 type WalkFunc func(path []int, entity *Entity, err error) error
 
+// workaround for https://github.com/emersion/go-message/issues/129
+// a more stable fix would be to detect the missing boundary explicitly
+func isEOF(err error) bool {
+	return err == io.EOF || err.Error() == "multipart: NextPart: EOF"
+}
+
 // Walk walks the entity's multipart tree, calling walkFunc for each part in
 // the tree, including the root entity.
 //
@@ -224,7 +230,7 @@ func (e *Entity) Walk(walkFunc WalkFunc) error {
 			// Get the next part from the last multipart reader
 			mr := multipartReaders[len(multipartReaders)-1]
 			part, err = mr.NextPart()
-			if err == io.EOF {
+			if isEOF(err) {
 				multipartReaders = multipartReaders[:len(multipartReaders)-1]
 				path = path[:len(path)-1]
 				continue
