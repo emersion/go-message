@@ -101,22 +101,28 @@ func (lr *limitedReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
+// ReadOptions are options for ReadWithOptions.
 type ReadOptions struct {
 	// MaxHeaderBytes limits the maximum permissible size of a message header
 	// block. If exceeded, an error will be returned.
-	// -1 == no limit, 0 == default value (1MB)
+	//
+	// Set to -1 for no limit, set to 0 for the default value (1MB).
 	MaxHeaderBytes int64
 }
 
 // withDefaults returns a sanitised version of the options with defaults/special
 // values accounted for.
-func (o ReadOptions) withDefaults() *ReadOptions {
-	if o.MaxHeaderBytes == 0 {
-		o.MaxHeaderBytes = defaultMaxHeaderBytes
-	} else if o.MaxHeaderBytes < 0 {
-		o.MaxHeaderBytes = math.MaxInt64
+func (o *ReadOptions) withDefaults() *ReadOptions {
+	var out ReadOptions
+	if o != nil {
+		out = *o
 	}
-	return &o
+	if out.MaxHeaderBytes == 0 {
+		out.MaxHeaderBytes = defaultMaxHeaderBytes
+	} else if out.MaxHeaderBytes < 0 {
+		out.MaxHeaderBytes = math.MaxInt64
+	}
+	return &out
 }
 
 // ReadWithOptions see Read, but allows overriding some parameters with
@@ -126,10 +132,6 @@ func (o ReadOptions) withDefaults() *ReadOptions {
 // returns an error that verifies IsUnknownCharset or IsUnknownEncoding, but
 // also returns an Entity that can be read.
 func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
-
-	if opts == nil {
-		opts = &ReadOptions{}
-	}
 	opts = opts.withDefaults()
 
 	lr := &limitedReader{R: r, N: opts.MaxHeaderBytes}
@@ -153,7 +155,7 @@ func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
 // error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
 // an Entity that can be read.
 func Read(r io.Reader) (*Entity, error) {
-	return ReadWithOptions(r, &ReadOptions{})
+	return ReadWithOptions(r, nil)
 }
 
 // MultipartReader returns a MultipartReader that reads parts from this entity's
