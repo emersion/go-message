@@ -61,7 +61,7 @@ func ExampleWriter() {
 	w1.Close()
 
 	var h2 message.Header
-	h1.SetContentType("text/plain", nil)
+	h2.SetContentType("text/plain", nil)
 	w2, err := w.CreatePart(h2)
 	if err != nil {
 		log.Fatal(err)

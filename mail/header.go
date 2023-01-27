@@ -243,7 +243,11 @@ func (h *Header) AddressList(key string) ([]*Address, error) {
 //
 // This can be used on From, Sender, Reply-To, To, Cc and Bcc header fields.
 func (h *Header) SetAddressList(key string, addrs []*Address) {
-	h.Set(key, formatAddressList(addrs))
+	if len(addrs) > 0 {
+		h.Set(key, formatAddressList(addrs))
+	} else {
+		h.Del(key)
+	}
 }
 
 // Date parses the Date header field.
@@ -304,10 +308,25 @@ func (h *Header) MsgIDList(key string) ([]string, error) {
 	return l, nil
 }
 
-// GenerateMessageID generates an RFC 2822-compliant Message-Id based on the
-// informational draft "Recommendations for generating Message IDs", for lack
-// of a better authoritative source.
+// GenerateMessageID wraps GenerateMessageIDWithHostname and therefore uses the
+// hostname of the local machine. This is done to not break existing software.
+// Wherever possible better use GenerateMessageIDWithHostname, because the local
+// hostname of a machine tends to not be unique nor a FQDN which especially
+// brings problems with spam filters.
 func (h *Header) GenerateMessageID() error {
+	var err error
+	hostname, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+	return h.GenerateMessageIDWithHostname(hostname)
+}
+
+// GenerateMessageIDWithHostname generates an RFC 2822-compliant Message-Id
+// based on the informational draft "Recommendations for generating Message
+// IDs", it takes an hostname as argument, so that software using this library
+// could use a hostname they know to be unique
+func (h *Header) GenerateMessageIDWithHostname(hostname string) error {
 	now := uint64(time.Now().UnixNano())
 
 	nonceByte := make([]byte, 8)
@@ -315,11 +334,6 @@ func (h *Header) GenerateMessageID() error {
 		return err
 	}
 	nonce := binary.BigEndian.Uint64(nonceByte)
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
 
 	msgID := fmt.Sprintf("%s.%s@%s", base36(now), base36(nonce), hostname)
 	h.SetMessageID(msgID)
@@ -341,11 +355,11 @@ func (h *Header) SetMessageID(id string) {
 //
 // This can be used on In-Reply-To and References header fields.
 func (h *Header) SetMsgIDList(key string, l []string) {
-	var v string
 	if len(l) > 0 {
-		v = "<" + strings.Join(l, "> <") + ">"
+		h.Set(key, "<"+strings.Join(l, "> <")+">")
+	} else {
+		h.Del(key)
 	}
-	h.Set(key, v)
 }
 
 // Copy creates a stand-alone copy of the header.
