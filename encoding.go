@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/emersion/go-message/quotedprintable"
 	"github.com/emersion/go-textwrapper"
 )
 
@@ -61,7 +60,7 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 
 	switch enc {
 	case "quoted-printable":
-		dec = quotedprintable.NewReader(r)
+		dec = mimeqp.NewReader(r)
 	case "base64":
 		wrapped := &whitespaceReplacingReader{wrapped: r}
 		dec = base64.NewDecoder(base64.StdEncoding, wrapped)
