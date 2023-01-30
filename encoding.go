@@ -7,9 +7,13 @@ import (
 	"io"
 	mimeqp "mime/quotedprintable"
 	"strings"
+	"sync"
 
-	"github.com/emersion/go-message/quotedprintable"
 	"github.com/emersion/go-textwrapper"
+)
+
+var (
+	decoders sync.Map // map[string]decoderProviderFn
 )
 
 type UnknownEncodingError struct {
@@ -28,11 +32,35 @@ func IsUnknownEncoding(err error) bool {
 	return errors.As(err, new(UnknownEncodingError))
 }
 
+// DecoderProviderFn should return an implementation of io.Reader capable of
+// decoding the transport encoding it was registered with, or nil to use the
+// module defaults.
+type DecoderProviderFn func(r io.Reader) io.Reader
+
+// RegisterTransportDecoder allows custom decoders for a specified transport
+// encoding, which can override the module defaults. If there is existing
+// custom decoder for a transportEncoding, it is replaced.
+func RegisterTransportDecoder(transportEncoding string, f DecoderProviderFn) {
+	if transportEncoding == "" || f == nil {
+		return
+	}
+	decoders.Store(strings.ToLower(transportEncoding), f)
+}
+
 func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	var dec io.Reader
-	switch strings.ToLower(enc) {
+	enc = strings.ToLower(enc)
+
+	if f, ok := decoders.Load(enc); ok {
+		dec = f.(DecoderProviderFn)(r)
+		if dec != nil {
+			return dec, nil
+		}
+	}
+
+	switch enc {
 	case "quoted-printable":
-		dec = quotedprintable.NewReader(r)
+		dec = mimeqp.NewReader(r)
 	case "base64":
 		wrapped := &whitespaceReplacingReader{wrapped: r}
 		dec = base64.NewDecoder(base64.StdEncoding, wrapped)
