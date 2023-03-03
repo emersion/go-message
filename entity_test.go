@@ -411,6 +411,7 @@ func TestEntity_WriteTo_convert_charset_transfer(t *testing.T) {
 
 	expected := "Mime-Version: 1.0\r\n" +
 		"Content-Type: text/plain; charset=utf-8\r\n" +
+		"Content-Transfer-Encoding: quoted-printable\r\n" +
 		"\r\n" +
 		"quoted =C3=A9 =E2=82=AC"
 
