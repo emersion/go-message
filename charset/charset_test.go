@@ -2,6 +2,7 @@ package charset
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -44,7 +45,7 @@ var testCharsets = []struct {
 	},
 	{
 		charset: "idontexist",
-		encoded: []byte{42},
+		encoded: []byte{},
 	},
 	{
 		charset: "gb2312",
@@ -84,5 +85,39 @@ func TestDisabledCharsetReader(t *testing.T) {
 	_, err := Reader("DISABLED", strings.NewReader("Some dummy text"))
 	if err == nil {
 		t.Errorf("Reader(): expected disabled charset to return an error")
+	}
+}
+
+func TestCharsetWriter(t *testing.T) {
+	for _, test := range testCharsets {
+		if test.decoded == "" {
+			continue
+		}
+		buf := new(bytes.Buffer)
+		w, err := Writer(test.charset, buf)
+		if len(test.encoded) == 0 {
+			if err == nil {
+				t.Errorf("Expected an error when creating writer for charset %q", test.charset)
+			}
+		}
+		if len(test.decoded) > 0 {
+			if err != nil {
+				t.Errorf("Expected no error when creating writer for charset %q, but got: %v", test.charset, err)
+			} else if _, err := io.Copy(w, strings.NewReader(test.decoded)); err != nil {
+				t.Errorf("Expected no error when writing charset %q, but got: %v", test.charset, err)
+			} else if !bytes.Equal(test.encoded, buf.Bytes()) {
+				t.Errorf("Expected encoded bytes to be %q but got %q", test.encoded, buf.Bytes())
+			}
+		}
+	}
+}
+
+func TestDisabledCharsetWriter(t *testing.T) {
+	charsets["DISABLED"] = nil
+
+	buf := new(bytes.Buffer)
+	_, err := Writer("DISABLED", buf)
+	if err == nil {
+		t.Errorf("Writer(): expected disabled charset to return an error")
 	}
 }

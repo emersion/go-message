@@ -50,6 +50,31 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	return input, UnknownCharsetError{fmt.Errorf("message: unhandled charset %q", charset)}
 }
 
+// CharsetWriter, if non-nil, defines a function to generate charset-conversion
+// writers, converting from UTF-8 into the provided charset. Charsets are always
+// lower-case. utf-8 and us-ascii charsets are handled by default. One of the
+// the CharsetWriter's result values must be non-nil.
+//
+// Importing github.com/emersion/go-message/charset will set CharsetWriter to
+// a function that handles most common charsets.
+var CharsetWriter func(charset string, writer io.Writer) (io.Writer, error)
+
+// charsetWriter calls CharsetWriter if non-nil.
+func charsetWriter(charset string, writer io.Writer) (io.Writer, error) {
+	charset = strings.ToLower(charset)
+	if charset == "" || charset == "utf-8" || charset == "us-ascii" {
+		return writer, nil
+	}
+	if CharsetWriter != nil {
+		r, err := CharsetWriter(charset, writer)
+		if err != nil {
+			return r, UnknownCharsetError{err}
+		}
+		return r, nil
+	}
+	return writer, UnknownCharsetError{fmt.Errorf("message: unhandled charset %q", charset)}
+}
+
 // decodeHeader decodes an internationalized header field. If it fails, it
 // returns the input string and the error.
 func decodeHeader(s string) (string, error) {

@@ -50,16 +50,14 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 		if err != nil {
 			return nil, err
 		}
-		ww.w = wc
-		ww.c = wc
-	}
 
-	switch strings.ToLower(mediaParams["charset"]) {
-	case "", "us-ascii", "utf-8":
-		// This is OK
-	default:
-		// Anything else is invalid
-		return nil, fmt.Errorf("unhandled charset %q", mediaParams["charset"])
+		converted, err := charsetWriter(strings.ToLower(mediaParams["charset"]), wc)
+		if err != nil {
+			return nil, fmt.Errorf("unhandled charset %q", mediaParams["charset"])
+		}
+
+		ww.w = converted
+		ww.c = wc
 	}
 
 	return ww, nil

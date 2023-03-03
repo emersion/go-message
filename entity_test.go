@@ -3,6 +3,7 @@ package message
 import (
 	"bytes"
 	"errors"
+	"golang.org/x/text/encoding/ianaindex"
 	"io"
 	"io/ioutil"
 	"math"
@@ -50,6 +51,23 @@ func testMakeMultipart() *Entity {
 	return e
 }
 
+func testMakeMultipartVaryingCharset() *Entity {
+	var h1 Header
+	h1.Set("Content-Type", "text/plain; charset=windows-1250")
+	r1 := bytes.NewReader([]byte{0x8c, 0x8d, 0x8f, 0x9c, 0x9d, 0x9f, 0xbc, 0xbe})
+	e1, _ := New(h1, r1)
+
+	var h2 Header
+	h2.Set("Content-Type", "text/html; charset=iso-8859-1")
+	r2 := bytes.NewReader([]byte{0x63, 0x61, 0x66, 0xE9})
+	e2, _ := New(h2, r2)
+
+	var h Header
+	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
+	e, _ := NewMultipart(h, []*Entity{e1, e2})
+	return e
+}
+
 const testMultipartHeader = "Mime-Version: 1.0\r\n" +
 	"Content-Type: multipart/alternative; boundary=IMTHEBOUNDARY\r\n\r\n"
 
@@ -64,6 +82,18 @@ const testMultipartBody = "--IMTHEBOUNDARY\r\n" +
 	"--IMTHEBOUNDARY--\r\n"
 
 var testMultipartText = testMultipartHeader + testMultipartBody
+
+var testMultipartVaryingCharsetBody = "--IMTHEBOUNDARY\r\n" +
+	"Content-Type: text/plain; charset=windows-1250\r\n" +
+	"\r\n" +
+	string([]byte{0x8c, 0x8d, 0x8f, 0x9c, 0x9d, 0x9f, 0xbc, 0xbe}) + "\r\n" +
+	"--IMTHEBOUNDARY\r\n" +
+	"Content-Type: text/html; charset=iso-8859-1\r\n" +
+	"\r\n" +
+	string([]byte{0x63, 0x61, 0x66, 0xE9}) + "\r\n" +
+	"--IMTHEBOUNDARY--\r\n"
+
+var testMultipartVaryingCharsetText = testMultipartHeader + testMultipartVaryingCharsetBody
 
 const testSingleText = "Content-Type: text/plain\r\n" +
 	"\r\n" +
@@ -296,6 +326,137 @@ func TestEntity_WriteTo_multipart(t *testing.T) {
 
 	if s := b.String(); s != testMultipartText {
 		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", testMultipartText, s)
+	}
+}
+
+var testCharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
+	enc, err := ianaindex.MIME.Encoding(charset)
+	if err != nil {
+		return nil, err
+	}
+	return enc.NewDecoder().Reader(input), nil
+}
+
+var testCharsetWriter = func(charset string, writer io.Writer) (io.Writer, error) {
+	enc, err := ianaindex.MIME.Encoding(charset)
+	if err != nil {
+		return nil, err
+	}
+	return enc.NewEncoder().Writer(writer), nil
+}
+
+// Returns a func that should be called at the end of the test
+func testSetupCharsetReaderWriter() func() {
+	oldCharsetReaderValue := CharsetReader
+	oldCharsetWriterValue := CharsetWriter
+	CharsetReader = testCharsetReader
+	CharsetWriter = testCharsetWriter
+	return func() {
+		CharsetReader = oldCharsetReaderValue
+		CharsetWriter = oldCharsetWriterValue
+	}
+}
+
+// Test going from windows-1252 base64 to windows-1252 quoted-printable
+func TestEntity_WriteTo_charset_convert_transfer(t *testing.T) {
+	resetCharset := testSetupCharsetReaderWriter()
+	defer resetCharset()
+
+	var h Header
+	h.Set("Content-Type", "text/plain; charset=windows-1252")
+	h.Set("Content-Transfer-Encoding", "base64")
+	// "quoted é €"
+	// 71 75 6F 74 65 64 20 E9 20 80
+	r := strings.NewReader("cXVvdGVkIOkggA==")
+	e, _ := New(h, r)
+
+	e.Header.Set("Content-Transfer-Encoding", "quoted-printable")
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	expected := "Mime-Version: 1.0\r\n" +
+		"Content-Transfer-Encoding: quoted-printable\r\n" +
+		"Content-Type: text/plain; charset=windows-1252\r\n" +
+		"\r\n" +
+		"quoted =E9 =80"
+
+	if s := b.String(); s != expected {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
+	}
+}
+
+// Test going from windows-1252 base64 to utf-8 quoted-printable
+func TestEntity_WriteTo_convert_charset_transfer(t *testing.T) {
+	resetCharset := testSetupCharsetReaderWriter()
+	defer resetCharset()
+
+	var h Header
+	h.Set("Content-Type", "text/plain; charset=windows-1252")
+	h.Set("Content-Transfer-Encoding", "base64")
+	// "quoted é €"
+	// 71 75 6F 74 65 64 20 E9 20 80
+	r := strings.NewReader("cXVvdGVkIOkggA==")
+	e, _ := New(h, r)
+
+	h.Set("Content-Transfer-Encoding", "quoted-printable")
+	e.Header.Set("Content-Type", "text/plain; charset=utf-8")
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	expected := "Mime-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=utf-8\r\n" +
+		"\r\n" +
+		"quoted =C3=A9 =E2=82=AC"
+
+	if s := b.String(); s != expected {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", expected, s)
+	}
+}
+
+// Test going from utf-8 to windows-1252 with unsupported runes
+func TestEntity_WriteTo_invalid_charset(t *testing.T) {
+	resetCharset := testSetupCharsetReaderWriter()
+	defer resetCharset()
+
+	var h Header
+	h.Set("Content-Type", "text/plain; charset=utf-8")
+	r := strings.NewReader("non-ascii çhars © ζ Ψ ⊆ ‰")
+	e, _ := New(h, r)
+
+	h.Set("Content-Transfer-Encoding", "quoted-printable")
+	e.Header.Set("Content-Type", "text/plain; charset=windows-1252")
+
+	var b bytes.Buffer
+	err := e.WriteTo(&b)
+	if err == nil {
+		t.Fatal("New(encoding unsupported rune): expected an error")
+	}
+	if IsUnknownEncoding(err) {
+		t.Fatal("New(encoding unsupported rune): expected an error that does not verify IsUnknownEncoding")
+	}
+	if !strings.Contains(err.Error(), "rune not supported") {
+		t.Fatal("New(encoding unsupported rune): expected 'rune not supported by encoding' error, got", err)
+	}
+}
+
+func TestEntity_WriteTo_multipart_charset(t *testing.T) {
+	resetCharset := testSetupCharsetReaderWriter()
+	defer resetCharset()
+	e := testMakeMultipartVaryingCharset()
+
+	var b bytes.Buffer
+	if err := e.WriteTo(&b); err != nil {
+		t.Fatal("Expected no error while writing entity, got", err)
+	}
+
+	if s := b.String(); s != testMultipartVaryingCharsetText {
+		t.Errorf("Expected written entity to be:\n%s\nbut got:\n%s", testMultipartVaryingCharsetText, s)
 	}
 }
 
