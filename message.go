@@ -9,4 +9,7 @@
 //	import (
 //		_ "github.com/emersion/go-message/charset"
 //	)
+//
+// Note, non-UTF-8 charsets are only supported when reading messages. Only
+// UTF-8 is supported when writing messages.
 package message
