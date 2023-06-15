@@ -6,7 +6,7 @@
 // Add this import to your package if you want to handle most common charsets
 // by default:
 //
-//   import (
-//   	_ "github.com/emersion/go-message/charset"
-//   )
+//	import (
+//		_ "github.com/emersion/go-message/charset"
+//	)
 package message
