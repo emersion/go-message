@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -211,6 +212,61 @@ func (p *headerParser) parseMsgID() (string, error) {
 	return left + "@" + right, nil
 }
 
+func (p *headerParser) parseListCommand() (*url.URL, error) {
+	if !p.skipCFWS() {
+		return nil, errors.New("mail: malformed parenthetical comment")
+	}
+
+	// Consume a potential newline + indent.
+	p.consume('\r')
+	p.consume('\n')
+	p.skipSpace()
+
+	if p.consume('N') && p.consume('O') {
+		if !p.skipCFWS() {
+			return nil, errors.New("mail: malformed parenthetical comment")
+		}
+
+		return nil, nil
+	}
+
+	if !p.consume('<') {
+		return nil, errors.New("mail: missing '<' in list command")
+	}
+
+	i := 0
+	for p.s[i] != '>' && i+1 < len(p.s) {
+		i += 1
+	}
+
+	var lit string
+	lit, p.s = p.s[:i], p.s[i:]
+
+	u, err := url.Parse(lit)
+	if err != nil {
+		return u, errors.New("mail: malformed URL")
+	}
+
+	if !p.consume('>') {
+		return nil, errors.New("mail: missing '>' in list command")
+	}
+
+	if !p.skipCFWS() {
+		return nil, errors.New("mail: malformed parenthetical comment")
+	}
+
+	// If there isn't a comma, we don't care because it means that there aren't
+	// any other list command URLs.
+	p.consume(',')
+	p.skipSpace()
+
+	// Consume a potential newline.
+	p.consume('\r')
+	p.consume('\n')
+
+	return u, nil
+}
+
 // A Header is a mail header.
 type Header struct {
 	message.Header
@@ -308,6 +364,35 @@ func (h *Header) MsgIDList(key string) ([]string, error) {
 	return l, nil
 }
 
+// MsgIDList parses a list of URLs from a list command header. It returns URLs.
+// If the header field is missing, it returns nil.
+//
+// This can be used on List-Help, List-Unsubscribe, List-Subscribe, List-Post,
+// List-Owner, and List-Archive headers.
+//
+// See https://www.rfc-editor.org/rfc/rfc2369 for more information.
+//
+// In the case that the value of List-Post is the special value, "NO", the
+// return value is a slice containing one element, nil.
+func (h *Header) ListCommandURLList(key string) ([]*url.URL, error) {
+	v := h.Get(key)
+	if v == "" {
+		return nil, nil
+	}
+
+	p := headerParser{v}
+	var l []*url.URL
+	for !p.empty() {
+		url, err := p.parseListCommand()
+		if err != nil {
+			return l, err
+		}
+		l = append(l, url)
+	}
+
+	return l, nil
+}
+
 // GenerateMessageID wraps GenerateMessageIDWithHostname and therefore uses the
 // hostname of the local machine. This is done to not break existing software.
 // Wherever possible better use GenerateMessageIDWithHostname, because the local
@@ -360,6 +445,18 @@ func (h *Header) SetMsgIDList(key string, l []string) {
 	} else {
 		h.Del(key)
 	}
+}
+
+func (h *Header) SetListCommandURLList(key string, urls []*url.URL) {
+	if len(urls) == 0 {
+		h.Del(key)
+	}
+
+	var ids []string
+	for _, url := range urls {
+		ids = append(ids, url.String())
+	}
+	h.Set(key, "<"+strings.Join(ids, ">, <")+">")
 }
 
 // Copy creates a stand-alone copy of the header.

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	netmail "net/mail"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -214,4 +215,225 @@ func TestHeader_EmptyAddressList(t *testing.T) {
 		}
 	}
 
+}
+
+func TestHeader_ListCommandURLList(t *testing.T) {
+	tests := []struct {
+		header string
+		raw    string
+		urls   []*url.URL
+		xfail  bool
+	}{
+		{
+			header: "List-Help",
+			raw:    "<mailto:hello@example.com",
+			xfail:  true,
+		},
+		// These tests might seem repetitive, but they are the examples given at
+		// https://www.rfc-editor.org/rfc/rfc2369.
+		{
+			header: "List-Help",
+			raw:    "<mailto:list@host.com?subject=help> (List Instructions)",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list@host.com", RawQuery: "subject=help"},
+			},
+		},
+		{
+			header: "List-Help",
+			raw:    "<mailto:list-manager@host.com?body=info>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list-manager@host.com", RawQuery: "body=info"},
+			},
+		},
+		{
+			header: "List-Help",
+			raw:    "<mailto:list-info@host.com> (Info about the list)",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list-info@host.com"},
+			},
+		},
+		{
+			header: "List-Help",
+			raw:    "<http://www.host.com/list/>, <mailto:list-info@host.com>",
+			urls: []*url.URL{
+				{Scheme: "http", Host: "www.host.com", Path: "/list/"},
+				{Scheme: "mailto", Opaque: "list-info@host.com"},
+			},
+		},
+		{
+			header: "List-Help",
+			raw:    "<ftp://ftp.host.com/list.txt> (FTP),\r\n\t<mailto:list@host.com?subject=help>",
+			urls: []*url.URL{
+				{Scheme: "ftp", Host: "ftp.host.com", Path: "/list.txt"},
+				{Scheme: "mailto", Opaque: "list@host.com", RawQuery: "subject=help"},
+			},
+		},
+		{
+			header: "List-Unsubscribe",
+			raw:    "<mailto:list@host.com?subject=unsubscribe>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list@host.com", RawQuery: "subject=unsubscribe"},
+			},
+		},
+		{
+			header: "List-Unsubscribe",
+			raw:    "(Use this command to get off the list)\r\n\t<mailto:list-manager@host.com?body=unsubscribe%20list>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list-manager@host.com", RawQuery: "body=unsubscribe%20list"},
+			},
+		},
+		{
+			header: "List-Unsubscribe",
+			raw:    "<mailto:list-off@host.com>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list-off@host.com"},
+			},
+		},
+		{
+			header: "List-Unsubscribe",
+			raw:    "<http://www.host.com/list.cgi?cmd=unsub&lst=list>,\r\n\t<mailto:list-request@host.com?subject=unsubscribe>",
+			urls: []*url.URL{
+				{Scheme: "http", Host: "www.host.com", Path: "/list.cgi", RawQuery: "cmd=unsub&lst=list"},
+				{Scheme: "mailto", Opaque: "list-request@host.com", RawQuery: "subject=unsubscribe"},
+			},
+		},
+		{
+			header: "List-Subscribe",
+			raw:    "<mailto:list@host.com?subject=subscribe>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list@host.com", RawQuery: "subject=subscribe"},
+			},
+		},
+		{
+			header: "List-Subscribe",
+			raw:    "(Use this command to join the list)\r\n\t<mailto:list-manager@host.com?body=subscribe%20list>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list-manager@host.com", RawQuery: "body=subscribe%20list"},
+			},
+		},
+		{
+			header: "List-Unsubscribe",
+			raw:    "<mailto:list-on@host.com>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list-on@host.com"},
+			},
+		},
+		{
+			header: "List-Subscribe",
+			raw:    "<http://www.host.com/list.cgi?cmd=sub&lst=list>,\r\n\t<mailto:list-manager@host.com?subject=subscribe>",
+			urls: []*url.URL{
+				{Scheme: "http", Host: "www.host.com", Path: "/list.cgi", RawQuery: "cmd=sub&lst=list"},
+				{Scheme: "mailto", Opaque: "list-manager@host.com", RawQuery: "subject=subscribe"},
+			},
+		},
+		{
+			header: "List-Post",
+			raw:    "<mailto:list@host.com>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list@host.com"},
+			},
+		},
+		{
+			header: "List-Post",
+			raw:    "<mailto:moderator@host.com> (Postings are Moderated)",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "moderator@host.com"},
+			},
+		},
+		{
+			header: "List-Post",
+			raw:    "<mailto:moderator@host.com?subject=list%20posting>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "moderator@host.com", RawQuery: "subject=list%20posting"},
+			},
+		},
+		{
+			header: "List-Post",
+			raw:    "NO (posting not allowed on this list)",
+			urls:   []*url.URL{nil},
+		},
+		{
+			header: "List-Owner",
+			raw:    "<mailto:listmom@host.com> (Contact Person for Help)",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "listmom@host.com"},
+			},
+		},
+		{
+			header: "List-Owner",
+			raw:    "<mailto:grant@foo.bar> (Grant Neufeld)",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "grant@foo.bar"},
+			},
+		},
+		{
+			header: "List-Owner",
+			raw:    "<mailto:josh@foo.bar?Subject=list>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "josh@foo.bar", RawQuery: "Subject=list"},
+			},
+		},
+		{
+			header: "List-Archive",
+			raw:    "<mailto:archive@host.com?subject=index%20list>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "archive@host.com", RawQuery: "subject=index%20list"},
+			},
+		},
+		{
+			header: "List-Archive",
+			raw:    "<ftp://ftp.host.com/pub/list/archive/>",
+			urls: []*url.URL{
+				{Scheme: "ftp", Host: "ftp.host.com", Path: "/pub/list/archive/"},
+			},
+		},
+		{
+			header: "List-Archive",
+			raw:    "<http://www.host.com/list/archive/> (Web Archive)",
+			urls: []*url.URL{
+				{Scheme: "http", Host: "www.host.com", Path: "/list/archive/"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		var h mail.Header
+		h.Set(test.header, test.raw)
+
+		urls, err := h.ListCommandURLList(test.header)
+		if err != nil && !test.xfail {
+			t.Errorf("Failed to parse %s %q: Header.ListCommandURLList() = %v", test.header, test.raw, err)
+		} else if !reflect.DeepEqual(urls, test.urls) {
+			t.Errorf("Failed to parse %s %q: Header.ListCommandURLList() = %q, want %q", test.header, test.raw, urls, test.urls)
+		}
+	}
+}
+
+func TestHeader_SetListCommandURLList(t *testing.T) {
+	tests := []struct {
+		raw  string
+		urls []*url.URL
+	}{
+		{
+			raw: "<mailto:list@example.com>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list@example.com"},
+			},
+		},
+		{
+			raw: "<mailto:list@example.com>, <https://example.com:8080>",
+			urls: []*url.URL{
+				{Scheme: "mailto", Opaque: "list@example.com"},
+				{Scheme: "https", Host: "example.com:8080"},
+			},
+		},
+	}
+	for _, test := range tests {
+		var h mail.Header
+		h.SetListCommandURLList("List-Post", test.urls)
+		raw := h.Get("List-Post")
+		if raw != test.raw {
+			t.Errorf("Failed to format List-Post %q: Header.Get() = %q, want %q", test.urls, raw, test.raw)
+		}
+	}
 }
