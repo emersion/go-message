@@ -100,8 +100,6 @@ func (m *multipartBody) NextPart() (*Entity, error) {
 
 func (m *multipartBody) writeBodyTo(w *Writer) error {
 	for _, p := range m.parts {
-		h := p.Header
-
 		pw, err := w.CreatePart(p.Header)
 		if err != nil {
 			return err
