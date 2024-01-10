@@ -12,9 +12,9 @@ import (
 	"github.com/emersion/go-message"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
-	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/ianaindex"
+	"golang.org/x/text/encoding/unicode"
 )
 
 // Quirks table for charsets not handled by ianaindex
@@ -25,7 +25,7 @@ import (
 // https://www.iana.org/assignments/character-sets/character-sets.xhtml
 var charsets = map[string]encoding.Encoding{
 	"ansi_x3.110-1983": charmap.ISO8859_1, // see RFC 1345 page 62, mostly superset of ISO 8859-1
-	"x-utf_8j": unicode.UTF8, // alias for UTF-8, see https://icu4c-demos.unicode.org/icu-bin/convexp?s=ALL
+	"x-utf_8j":         unicode.UTF8,      // alias for UTF-8, see https://icu4c-demos.unicode.org/icu-bin/convexp?s=ALL
 }
 
 func init() {
