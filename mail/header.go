@@ -356,7 +356,11 @@ func base36(input uint64) string {
 // SetMessageID sets the Message-ID field. id is the message identifier,
 // without the angle brackets.
 func (h *Header) SetMessageID(id string) {
-	h.Set("Message-Id", "<"+id+">")
+	if id != "" {
+		h.Set("Message-Id", "<"+id+">")
+	} else {
+		h.Del("Message-Id")
+	}
 }
 
 // SetMsgIDList formats a list of message identifiers. Message identifiers
