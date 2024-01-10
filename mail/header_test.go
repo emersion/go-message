@@ -64,6 +64,16 @@ func TestHeader_Date_CFWS(t *testing.T) {
 	}
 }
 
+func TestHeader_Date_empty(t *testing.T) {
+	var h mail.Header
+	date, err := h.Date()
+	if err != nil {
+		t.Errorf("Date() = %v", err)
+	} else if !date.IsZero() {
+		t.Errorf("Date() = %v, want time.Time{}", date)
+	}
+}
+
 func TestHeader_MessageID(t *testing.T) {
 	tests := []struct {
 		raw   string
