@@ -195,9 +195,9 @@ func (p *headerParser) parseMsgID() (string, error) {
 		right, err = p.parseNoFoldLiteral()
 	} else {
 		right, err = p.parseAtomText(true)
-		if err != nil {
-			return "", err
-		}
+	}
+	if err != nil {
+		return "", err
 	}
 
 	if !p.consume('>') {
