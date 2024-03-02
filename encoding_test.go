@@ -71,3 +71,99 @@ func TestEncode(t *testing.T) {
 		}
 	}
 }
+
+var lineWrapperTests = []struct {
+	name    string
+	in, out string
+}{
+	{
+		name: "empty",
+		in:   "",
+		out:  "",
+	},
+	{
+		name: "oneLine",
+		in:   "ab",
+		out:  "ab",
+	},
+	{
+		name: "oneLineMax",
+		in:   "abc",
+		out:  "abc",
+	},
+	{
+		name: "twoLines",
+		in:   "abcde",
+		out:  "abc\r\nde",
+	},
+	{
+		name: "twoLinesMax",
+		in:   "abcdef",
+		out:  "abc\r\ndef",
+	},
+	{
+		name: "threeLines",
+		in:   "abcdefhi",
+		out:  "abc\r\ndef\r\nhi",
+	},
+	{
+		name: "wrappedMiss",
+		in:   "abcd\nef",
+		out:  "abc\r\nd\r\nef",
+	},
+	{
+		name: "wrappedLF",
+		in:   "abc\ndef\nhij",
+		out:  "abc\r\ndef\r\nhij",
+	},
+	{
+		name: "wrappedCRLF",
+		in:   "abc\r\ndef\r\nhij",
+		out:  "abc\r\ndef\r\nhij",
+	},
+	{
+		name: "trailingCRLF",
+		in:   "a\r\n",
+		out:  "a\r\n",
+	},
+	{
+		name: "cr",
+		in:   "\r\r\r\r\r",
+		out:  "\r\r\r\r\n\r",
+	},
+}
+
+func TestLineWrapper(t *testing.T) {
+	for _, tc := range lineWrapperTests {
+		t.Run(tc.name, func(t *testing.T) {
+			var sb strings.Builder
+			w := &lineWrapper{w: &sb, maxLineLen: 3}
+			if _, err := io.WriteString(w, tc.in); err != nil {
+				t.Fatalf("WriteString() = %v", err)
+			}
+			if s := sb.String(); s != tc.out {
+				t.Errorf("got %q, want %q", s, tc.out)
+			}
+		})
+
+		t.Run(tc.name+"/bytePerByte", func(t *testing.T) {
+			var sb strings.Builder
+			w := &lineWrapper{w: &sb, maxLineLen: 3}
+			if err := writeStringBytePerByte(w, tc.in); err != nil {
+				t.Fatalf("writeStringBytePerByte() = %v", err)
+			}
+			if s := sb.String(); s != tc.out {
+				t.Errorf("got %q, want %q", s, tc.out)
+			}
+		})
+	}
+}
+
+func writeStringBytePerByte(w io.Writer, s string) error {
+	for i := 0; i < len(s); i++ {
+		if _, err := w.Write([]byte{s[i]}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
