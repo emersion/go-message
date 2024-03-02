@@ -1,14 +1,13 @@
 package message
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"mime/quotedprintable"
 	"strings"
-
-	"github.com/emersion/go-textwrapper"
 )
 
 type UnknownEncodingError struct {
@@ -57,9 +56,9 @@ func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 	case "quoted-printable":
 		wc = quotedprintable.NewWriter(w)
 	case "base64":
-		wc = base64.NewEncoder(base64.StdEncoding, textwrapper.NewRFC822(w))
+		wc = base64.NewEncoder(base64.StdEncoding, &lineWrapper{w: w, maxLineLen: 76})
 	case "7bit", "8bit":
-		wc = nopCloser{textwrapper.New(w, "\r\n", 1000)}
+		wc = nopCloser{&lineWrapper{w: w, maxLineLen: 998}}
 	case "binary", "":
 		wc = nopCloser{w}
 	default:
@@ -85,4 +84,68 @@ func (r *whitespaceReplacingReader) Read(p []byte) (int, error) {
 	}
 
 	return n, err
+}
+
+type lineWrapper struct {
+	w          io.Writer
+	maxLineLen int
+
+	curLineLen int
+	cr         bool
+}
+
+func (w *lineWrapper) Write(b []byte) (int, error) {
+	var written int
+	for len(b) > 0 {
+		var l []byte
+		l, b = cutLine(b, w.maxLineLen-w.curLineLen)
+
+		lf := bytes.HasSuffix(l, []byte("\n"))
+		l = bytes.TrimSuffix(l, []byte("\n"))
+
+		n, err := w.w.Write(l)
+		if err != nil {
+			return written, err
+		}
+		written += n
+
+		cr := bytes.HasSuffix(l, []byte("\r"))
+		if len(l) == 0 {
+			cr = w.cr
+		}
+
+		if !lf && len(b) == 0 {
+			w.curLineLen += len(l)
+			w.cr = cr
+			break
+		}
+		w.curLineLen = 0
+
+		ending := []byte("\r\n")
+		if cr {
+			ending = []byte("\n")
+		}
+		_, err = w.w.Write(ending)
+		if err != nil {
+			return written, err
+		}
+		w.cr = false
+	}
+
+	return written, nil
+}
+
+func cutLine(b []byte, max int) ([]byte, []byte) {
+	for i := 0; i < len(b); i++ {
+		if b[i] == '\r' && i == max {
+			continue
+		}
+		if b[i] == '\n' {
+			return b[:i+1], b[i+1:]
+		}
+		if i >= max {
+			return b[:i], b[i:]
+		}
+	}
+	return b, nil
 }
