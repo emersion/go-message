@@ -69,8 +69,7 @@ func createWriter(w io.Writer, header *Header) (*Writer, error) {
 // encoding, data written to the Writer will automatically be encoded with it.
 // The charset needs to be utf-8 or us-ascii.
 func CreateWriter(w io.Writer, header Header) (*Writer, error) {
-
-	// ensure that modifications are invisible to the caller
+	// Ensure that modifications are invisible to the caller
 	header = header.Copy()
 
 	// If the message uses MIME, it has to include MIME-Version
