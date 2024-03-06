@@ -187,9 +187,13 @@ func (e *Entity) WriteTo(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	defer ew.Close()
 
-	return e.writeBodyTo(ew)
+	if err := e.writeBodyTo(ew); err != nil {
+		ew.Close()
+		return err
+	}
+
+	return ew.Close()
 }
 
 // WalkFunc is the type of the function called for each part visited by Walk.
