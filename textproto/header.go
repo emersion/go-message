@@ -533,6 +533,11 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 
 	for {
 		kv, err := readContinuedLineSlice(r)
+
+		kv = bytes.ReplaceAll(kv, []byte("\r"), []byte(""))
+		kv = bytes.ReplaceAll(kv, []byte("\n"), []byte(""))
+		kv = bytes.ReplaceAll(kv, []byte("\t"), []byte(""))
+
 		if len(kv) == 0 {
 			return newHeader(fs), err
 		}
