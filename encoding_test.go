@@ -3,9 +3,10 @@ package message
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var testEncodings = []struct {
@@ -38,6 +39,11 @@ var testEncodings = []struct {
 		encoded: "Y2Fmw6k=",
 		decoded: "café",
 	},
+	{
+		enc:     "iso-8859-1",
+		encoded: "caf" + string([]byte{0xe9}) + " ",
+		decoded: "café ",
+	},
 }
 
 func TestDecode(t *testing.T) {
@@ -45,7 +51,7 @@ func TestDecode(t *testing.T) {
 		r, err := encodingReader(test.enc, strings.NewReader(test.encoded))
 		if err != nil {
 			t.Errorf("Expected no error when creating decoder for encoding %q, but got: %v", test.enc, err)
-		} else if b, err := ioutil.ReadAll(r); err != nil {
+		} else if b, err := io.ReadAll(r); err != nil {
 			t.Errorf("Expected no error when reading encoding %q, but got: %v", test.enc, err)
 		} else if s := string(b); s != test.decoded {
 			t.Errorf("Expected decoded text to be %q but got %q", test.decoded, s)
@@ -63,7 +69,8 @@ func TestDecode_error(t *testing.T) {
 func TestEncode(t *testing.T) {
 	for _, test := range testEncodings {
 		var b bytes.Buffer
-		wc, _ := encodingWriter(test.enc, &b)
+		wc, err := encodingWriter(test.enc, &b)
+		assert.NoError(t, err)
 		io.WriteString(wc, test.decoded)
 		wc.Close()
 		if s := b.String(); s != test.encoded {

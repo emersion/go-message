@@ -8,6 +8,9 @@ import (
 	"io"
 	"mime/quotedprintable"
 	"strings"
+
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 type UnknownEncodingError struct {
@@ -36,10 +39,35 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 		dec = base64.NewDecoder(base64.StdEncoding, wrapped)
 	case "7bit", "8bit", "binary", "":
 		dec = r
+	case "iso-8859-1":
+		var err error
+		dec, err = decodeISO8859_1(r)
+		if err != nil {
+			return nil, UnknownEncodingError{e: err}
+		}
 	default:
 		return nil, fmt.Errorf("unhandled encoding %q", enc)
 	}
 	return dec, nil
+}
+
+func decodeISO8859_1(input io.Reader) (io.Reader, error) {
+	// Create a transformer that converts ISO-8859-1 to UTF-8
+	transformer := charmap.ISO8859_1.NewDecoder()
+
+	// Create a buffer to hold the decoded data
+	var decodedBuffer bytes.Buffer
+
+	// Create a transformer reader that will decode as it reads
+	transformedReader := transform.NewReader(input, transformer)
+
+	// Read the transformed data into the buffer
+	if _, err := io.Copy(&decodedBuffer, transformedReader); err != nil {
+		return nil, err
+	}
+
+	// Return a reader for the decoded buffer
+	return &decodedBuffer, nil
 }
 
 type nopCloser struct {
@@ -61,6 +89,8 @@ func encodingWriter(enc string, w io.Writer) (io.WriteCloser, error) {
 		wc = nopCloser{&lineWrapper{w: w, maxLineLen: 998}}
 	case "binary", "":
 		wc = nopCloser{w}
+	case "iso-8859-1":
+		wc = transform.NewWriter(w, charmap.ISO8859_1.NewEncoder())
 	default:
 		return nil, fmt.Errorf("unhandled encoding %q", enc)
 	}
