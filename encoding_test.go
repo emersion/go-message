@@ -2,12 +2,33 @@ package message
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
+
+func TestUtil(t *testing.T) {
+	vietnameseText := "Hôm nay trời đẹp quá!"
+	var encodedBuffer bytes.Buffer
+	encoder := charmap.Windows1258.NewEncoder()
+	writer := transform.NewWriter(&encodedBuffer, encoder)
+	if _, err := writer.Write([]byte(vietnameseText)); err != nil {
+		fmt.Println("Error encoding:", err)
+		return
+	}
+	if err := writer.Close(); err != nil {
+		fmt.Println("Error closing writer:", err)
+		return
+	}
+	encodedBytes := encodedBuffer.Bytes()
+	fmt.Println("Encoded bytes:", encodedBytes)
+	fmt.Println("Encoded string:", fmt.Sprintf("% x", encodedBytes))
+}
 
 var testEncodings = []struct {
 	enc     string
@@ -30,6 +51,16 @@ var testEncodings = []struct {
 		decoded: "hi there",
 	},
 	{
+		enc:     "utf8",
+		encoded: "café",
+		decoded: "café",
+	},
+	{
+		enc:     "ascii",
+		encoded: "hi there",
+		decoded: "hi there",
+	},
+	{
 		enc:     "quoted-printable",
 		encoded: "caf=C3=A9",
 		decoded: "café",
@@ -43,6 +74,141 @@ var testEncodings = []struct {
 		enc:     "iso-8859-1",
 		encoded: "caf" + string([]byte{0xe9}) + " ",
 		decoded: "café ",
+	},
+	{
+		enc:     "windows-1252",
+		encoded: "Hell\xE9, world!",
+		decoded: "Hellé, world!",
+	},
+	{
+		enc:     "cp1252",
+		encoded: "Hell\xE9, world!",
+		decoded: "Hellé, world!",
+	},
+	{
+		enc:     "iso-2022-jp",
+		encoded: "\x1b$B$3$s$K$A$O\x1b(B",
+		decoded: "こんにちは", // "hello" in Japanese
+	},
+	{
+		enc:     "iso-8859-14",
+		encoded: "\xA1ello, world!",
+		decoded: "Ḃello, world!",
+	},
+	{
+		enc:     "ansi_x3.4-1968",
+		encoded: "Hello, world!", // This encoding is the same as ascii, but with some revisions
+		decoded: "Hello, world!",
+	},
+	{
+		enc:     "iso-8859-2",
+		encoded: "Hello, World! \xbf\xf3\xbb\xea",
+		decoded: "Hello, World! żóťę",
+	},
+	{
+		enc:     "windows-1251",
+		encoded: "Hello, World! \xbf\xf3\xbb\xea",
+		decoded: "Hello, World! їу»к",
+	},
+	{
+		enc:     "windows-1256",
+		encoded: "Hello, World! \xbf\xf3\xbb\xea",
+		decoded: "Hello, World! ؟َ»ê",
+	},
+	{
+		enc:     "koi8-u",
+		encoded: "Hello, World! \xbf\xf3\xbb\xea",
+		decoded: "Hello, World! ©С╩Й",
+	},
+	{
+		enc:     "ks_c_5601-1987",
+		encoded: "\xbeȳ\xe7\xc7ϼ\xbc\xbf\xe4",
+		decoded: "안녕하세요", // "hello" in Korean
+	},
+	{
+		enc:     "gbk",
+		encoded: "\xc4\xe3\xba\xc3",
+		decoded: "你好", // "hello" in Chinese
+	},
+	{
+		enc:     "iso-8859-6",
+		encoded: "Hello, World! \xbf\xea",
+		decoded: "Hello, World! ؟ي", // Arabic question mark
+	},
+	{
+		enc:     "windows-1257",
+		encoded: "Hello, World! \xfe\xe0\xe8\xe6\xeb\xe1\xf0\xf8\xfb",
+		decoded: "Hello, World! žąčęėįšųū", // Lithuanian
+	},
+	{
+		enc:     "windows-1250",
+		encoded: "\xd8\xedkej, \x9ee t\xec l\xe1ska k \x9eivotu nedovol\xed lh\xe1t.",
+		decoded: "Říkej, že tě láska k životu nedovolí lhát.", // Czech
+	},
+	{
+		enc:     "gb2312",
+		encoded: "\xc4\xe3\xba\xc3",
+		decoded: "你好", // "hello" in Chinese
+	},
+	{
+		enc:     "iso-8859-8-i",
+		encoded: "\xf9\xec\xe5\xed, \xee\xe4 \xf9\xec\xe5\xee\xea?",
+		decoded: "שלום, מה שלומך?", // Hebrew, "hello, how are you?"
+	},
+	{
+		enc:     "windows-1258",
+		encoded: "Ch\xe0o",
+		decoded: "Chào", // Vietnamese, "hello"
+	},
+	{
+		enc:     "big5",
+		encoded: "\xd2\xf1\xc2k\xbf\xa4",
+		decoded: "秭歸縣", // Chinese, "Zigui County"
+	},
+	{
+		enc:     "windows-1255",
+		encoded: "\xf9\xec\xe5\xed, \xee\xe4 \xf9\xec\xe5\xee\xea?",
+		decoded: "שלום, מה שלומך?", // Hebrew, "hello, how are you?"
+	},
+	{
+		enc:     "windows-1253",
+		encoded: "\xca\xe1\xeb\xe7\xec\xdd\xf1\xe1 \xea\xfc\xf3\xec\xe5!",
+		decoded: "Καλημέρα κόσμε!", // Greek, "Good morning world!"
+	},
+	{
+		enc:     "iso-8859-9",
+		encoded: "Merhaba d\xfcnya!",
+		decoded: "Merhaba dünya!", // Turkish, "hello world!"
+	},
+	{
+		enc:     "windows-1254",
+		encoded: "Merhaba d\xfcnya!",
+		decoded: "Merhaba dünya!", // Turkish, "hello world!"
+	},
+	{
+		enc:     "shift-jis",
+		encoded: "\x82\xb1\x82\xf1\x82ɂ\xbf\x82\xcd",
+		decoded: "こんにちは", // "hello" in Japanese
+	},
+	{
+		enc:     "utf-16le",
+		encoded: "H\x00e\x00l\x00l\x00o\x00,\x00 \x00w\x00o\x00r\x00l\x00d\x00!\x00 \x00=\xd8\x00\xde",
+		decoded: "Hello, world! 😀",
+	},
+	{
+		enc:     "iso-8859-5",
+		encoded: "\xbf\xe0\xd8\xd2\xd5\xe2, \xdc\xd8\xe0!",
+		decoded: "Привет, мир!", // Russian, "hello world!"
+	},
+	{
+		enc:     "iso-8859-7",
+		encoded: "\xca\xe1\xeb\xe7\xec\xdd\xf1\xe1, \xea\xfc\xf3\xec\xe5!",
+		decoded: "Καλημέρα, κόσμε!", // Greek, "good morning, world!"
+	},
+	{
+		enc:     "iso_8859-1",
+		encoded: "caf\xe9",
+		decoded: "café",
 	},
 }
 
