@@ -29,7 +29,7 @@ func ExampleWriter() {
 	}
 
 	// Create a text part
-	tw, err := mw.CreateInline()
+	tw, err := mw.CreateAlternative()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestWriter(t *testing.T) {
 	}
 
 	// Create a text part
-	tw, err := mw.CreateInline()
+	tw, err := mw.CreateAlternative()
 	if err != nil {
 		t.Fatal(err)
 	}

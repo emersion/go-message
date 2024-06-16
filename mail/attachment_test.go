@@ -49,3 +49,14 @@ func TestAttachmentHeader_Filename_encoded(t *testing.T) {
 		t.Errorf("Expected filename to be %q but got %q", "", filename)
 	}
 }
+
+func TestInlineAttachmentHeader_Filename(t *testing.T) {
+	var h mail.InlineAttachmentHeader
+	h.Set("Content-Disposition", "inline; filename=note.txt")
+
+	if filename, err := h.Filename(); err != nil {
+		t.Error("Expected no error while parsing filename, got:", err)
+	} else if filename != "note.txt" {
+		t.Errorf("Expected filename to be %q but got %q", "note.txt", filename)
+	}
+}
