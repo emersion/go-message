@@ -125,10 +125,11 @@ func (w *lineWrapper) Write(b []byte) (int, error) {
 		if cr {
 			ending = []byte("\n")
 		}
-		_, err = w.w.Write(ending)
+		n, err = w.w.Write(ending)
 		if err != nil {
 			return written, err
 		}
+		written += n
 		w.cr = false
 	}
 
