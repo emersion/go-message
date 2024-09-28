@@ -129,6 +129,10 @@ func (w *lineWrapper) Write(b []byte) (int, error) {
 		if err != nil {
 			return written, err
 		}
+		// If the written `\n` was part of the input bytes slice, then account for it.
+		if lf {
+			written++
+		}
 		w.cr = false
 	}
 
