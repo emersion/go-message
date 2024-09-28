@@ -125,11 +125,14 @@ func (w *lineWrapper) Write(b []byte) (int, error) {
 		if cr {
 			ending = []byte("\n")
 		}
-		n, err = w.w.Write(ending)
+		_, err = w.w.Write(ending)
 		if err != nil {
 			return written, err
 		}
-		written += n
+		// If the written `\n` was part of the input bytes slice, then account for it.
+		if lf {
+			written++
+		}
 		w.cr = false
 	}
 
