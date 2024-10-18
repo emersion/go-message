@@ -46,7 +46,7 @@ func New(header Header, body io.Reader) (*Entity, error) {
 	}
 
 	// RFC 2046 section 4.1.2: charset only applies to text/*
-	if strings.HasPrefix(mediaType, "text/") {
+	if strings.HasPrefix(mediaType, "text/") && needDecodeTextPart(header) {
 		if ch, ok := mediaParams["charset"]; ok {
 			if converted, charsetErr := charsetReader(ch, body); charsetErr != nil {
 				err = UnknownCharsetError{charsetErr}
