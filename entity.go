@@ -12,6 +12,9 @@ import (
 
 // An Entity is either a whole message or a one of the parts in the body of a
 // multipart entity.
+//
+// An Entity can only be consumed once: after its body is read, it can't be
+// used anymore.
 type Entity struct {
 	Header Header    // The entity's header.
 	Body   io.Reader // The decoded entity's body.
