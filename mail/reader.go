@@ -21,10 +21,12 @@ type PartHeader interface {
 	// Set sets the header entries associated with key to the single element
 	// value. It replaces any existing values associated with key.
 	Set(key, value string)
+
+	partHeader()
 }
 
-// A Part is either a mail text or an attachment. Header is either a InlineHeader
-// or an AttachmentHeader.
+// A Part is either a mail text or an attachment. Header is either a *InlineHeader
+// or an *AttachmentHeader.
 type Part struct {
 	Header PartHeader
 	Body   io.Reader

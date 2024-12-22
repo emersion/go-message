@@ -9,6 +9,10 @@ type AttachmentHeader struct {
 	message.Header
 }
 
+var _ PartHeader = (*AttachmentHeader)(nil)
+
+func (*AttachmentHeader) partHeader() {}
+
 // Filename parses the attachment's filename.
 func (h *AttachmentHeader) Filename() (string, error) {
 	_, params, err := h.ContentDisposition()

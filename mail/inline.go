@@ -8,3 +8,7 @@ import (
 type InlineHeader struct {
 	message.Header
 }
+
+var _ PartHeader = (*InlineHeader)(nil)
+
+func (*InlineHeader) partHeader() {}
