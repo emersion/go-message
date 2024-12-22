@@ -11,14 +11,14 @@ import (
 	"testing"
 )
 
-func testMakeEntity() *Entity {
+func testMakeEntity() *Reader {
 	var h Header
 	h.Set("Content-Type", "text/plain; charset=US-ASCII")
 	h.Set("Content-Transfer-Encoding", "base64")
 
 	r := strings.NewReader("Y2Mgc2F2YQ==")
 
-	e, _ := New(h, r)
+	e, _ := NewReader(h, r)
 	return e
 }
 
@@ -33,20 +33,20 @@ func TestNewEntity(t *testing.T) {
 	}
 }
 
-func testMakeMultipart() *Entity {
+func testMakeMultipart() *Reader {
 	var h1 Header
 	h1.Set("Content-Type", "text/plain")
 	r1 := strings.NewReader("Text part")
-	e1, _ := New(h1, r1)
+	e1, _ := NewReader(h1, r1)
 
 	var h2 Header
 	h2.Set("Content-Type", "text/html")
 	r2 := strings.NewReader("<p>HTML part</p>")
-	e2, _ := New(h2, r2)
+	e2, _ := NewReader(h2, r2)
 
 	var h Header
 	h.Set("Content-Type", "multipart/alternative; boundary=IMTHEBOUNDARY")
-	e, _ := NewMultipart(h, []*Entity{e1, e2})
+	e, _ := NewMultipartReader(h, []*Reader{e1, e2})
 	return e
 }
 
@@ -69,7 +69,7 @@ const testSingleText = "Content-Type: text/plain\r\n" +
 	"\r\n" +
 	"Message body"
 
-func testMultipart(t *testing.T, e *Entity) {
+func testMultipart(t *testing.T, e *Reader) {
 	mr := e.MultipartReader()
 	if mr == nil {
 		t.Fatalf("Expected MultipartReader not to return nil")
@@ -266,7 +266,7 @@ func TestEntity_WriteTo_convert(t *testing.T) {
 	h.Set("Content-Type", "text/plain; charset=utf-8")
 	h.Set("Content-Transfer-Encoding", "base64")
 	r := strings.NewReader("Qm9uam91ciDDoCB0b3Vz")
-	e, _ := New(h, r)
+	e, _ := NewReader(h, r)
 
 	e.Header.Set("Content-Transfer-Encoding", "quoted-printable")
 
@@ -306,15 +306,15 @@ func TestNew_unknownTransferEncoding(t *testing.T) {
 	expected := "hey there"
 	r := strings.NewReader(expected)
 
-	e, err := New(h, r)
+	e, err := NewReader(h, r)
 	if err == nil {
-		t.Fatal("New(unknown transfer encoding): expected an error")
+		t.Fatal("NewReader(unknown transfer encoding): expected an error")
 	}
 	if !IsUnknownEncoding(err) {
-		t.Fatal("New(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
+		t.Fatal("NewReader(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
 	}
 	if !errors.As(err, &UnknownEncodingError{}) {
-		t.Fatal("New(unknown transfer encoding): expected an error that verifies errors.As(err, &EncodingError{})")
+		t.Fatal("NewReader(unknown transfer encoding): expected an error that verifies errors.As(err, &EncodingError{})")
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {
@@ -331,12 +331,12 @@ func TestNew_unknownCharset(t *testing.T) {
 	expected := "hey there"
 	r := strings.NewReader(expected)
 
-	e, err := New(h, r)
+	e, err := NewReader(h, r)
 	if err == nil {
-		t.Fatal("New(unknown charset): expected an error")
+		t.Fatal("NewReader(unknown charset): expected an error")
 	}
 	if !IsUnknownCharset(err) {
-		t.Fatal("New(unknown charset): expected an error that verifies IsUnknownCharset")
+		t.Fatal("NewReader(unknown charset): expected an error that verifies IsUnknownCharset")
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {
@@ -372,7 +372,7 @@ func TestNew_paddedBase64(t *testing.T) {
 
 	e, err := Read(strings.NewReader(testPartRaw))
 	if err != nil {
-		t.Fatal("New(padded Base64): expected no error, got", err)
+		t.Fatal("Read(padded Base64): expected no error, got", err)
 	}
 
 	if b, err := ioutil.ReadAll(e.Body); err != nil {
@@ -398,9 +398,9 @@ type testWalkPart struct {
 	err       error
 }
 
-func walkCollect(e *Entity) ([]testWalkPart, error) {
+func walkCollect(e *Reader) ([]testWalkPart, error) {
 	var l []testWalkPart
-	err := e.Walk(func(path []int, part *Entity, err error) error {
+	err := e.Walk(func(path []int, part *Reader, err error) error {
 		var body string
 		if part.MultipartReader() == nil {
 			b, err := ioutil.ReadAll(part.Body)
