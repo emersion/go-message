@@ -33,11 +33,15 @@ type HeaderFields interface {
 	// charset is decoded to UTF-8. If the header field's charset is unknown,
 	// the raw field value is returned and the error verifies IsUnknownCharset.
 	Text() (string, error)
+
+	headerFields()
 }
 
 type headerFields struct {
 	textproto.HeaderFields
 }
+
+func (*headerFields) headerFields() {}
 
 func (hf *headerFields) Text() (string, error) {
 	return decodeHeader(hf.Value())

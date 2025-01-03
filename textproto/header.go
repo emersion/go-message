@@ -261,12 +261,16 @@ type HeaderFields interface {
 	// For Fields(), it will return the amount of fields in the whole header section.
 	// For FieldsByKey(), it will return the amount of fields with certain key.
 	Len() int
+
+	headerFields()
 }
 
 type headerFields struct {
 	h   *Header
 	cur int
 }
+
+func (*headerFields) headerFields() {}
 
 func (fs *headerFields) Next() bool {
 	fs.cur++
@@ -337,6 +341,8 @@ type headerFieldsByKey struct {
 	k   string
 	cur int
 }
+
+func (*headerFieldsByKey) headerFields() {}
 
 func (fs *headerFieldsByKey) Next() bool {
 	fs.cur++
