@@ -144,6 +144,9 @@ func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !h.Valid() {
+		return nil, nil
+	}
 
 	lr.N = math.MaxInt64
 

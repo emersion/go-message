@@ -226,6 +226,11 @@ func (h *Header) Len() int {
 	return len(h.l)
 }
 
+// Valid returns if the data structure is valid, if it was initialized correctly
+func (h *Header) Valid() bool {
+	return h.l != nil && h.m != nil
+}
+
 // Map returns all header fields as a map.
 //
 // This function is provided for interoperability with the standard library.
@@ -539,6 +544,10 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 
 	for {
 		kv, err := readContinuedLineSlice(r)
+		if kv == nil && len(fs) == 0 {
+			// Construct an invalid header.
+			return Header{}, err
+		}
 		if len(kv) == 0 {
 			return newHeader(fs), err
 		}
