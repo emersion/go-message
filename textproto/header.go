@@ -102,7 +102,7 @@ func HeaderFromMap(m map[string][]string) Header {
 // AddRaw adds the raw key, value pair to the header.
 //
 // The supplied byte slice should be a complete field in the "Key: Value" form
-// including trailing CRLF. If there is no comma in the input - AddRaw panics.
+// including trailing CRLF. If there is no colon in the input - AddRaw panics.
 // No changes are made to kv contents and it will be copied into WriteHeader
 // output as is.
 //
