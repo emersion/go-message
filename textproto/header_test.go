@@ -259,6 +259,20 @@ func TestReadHeaderWithoutBody(t *testing.T) {
 	}
 }
 
+const testInvalidHeadersWithSemicolon = `Content-Type:application/vnd.ms-excel;  name="20250225.xlsx"
+Content-Transfer-Encoding: base64
+Content-Disposition; attachment
+
+`
+
+func TestInvalidHeadersWithSemicolon(t *testing.T) {
+	r := bufio.NewReader(strings.NewReader(testInvalidHeadersWithSemicolon))
+	_, err := ReadHeader(r)
+	if err != nil {
+		t.Fatalf("readHeader() returned error: %v", err)
+	}
+}
+
 const testLFHeader = `From: contact@example.org
 To: contact@example.org
 Subject: A little message, just for you

@@ -541,7 +541,11 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		// appear in the wild, violating specs, so we remove them if present.
 		i := bytes.IndexByte(kv, ':')
 		if i < 0 {
-			return newHeader(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
+			// Check for semicolon as a malformed header
+			i = bytes.IndexByte(kv, ';')
+			if i < 0 {
+				return newHeader(fs), fmt.Errorf("message: malformed MIME header line: %v", string(kv))
+			}
 		}
 
 		keyBytes := trim(kv[:i])
@@ -557,13 +561,13 @@ func ReadHeader(r *bufio.Reader) (Header, error) {
 		key := textproto.CanonicalMIMEHeaderKey(string(keyBytes))
 
 		// As per RFC 7230 field-name is a token, tokens consist of one or more
-		// chars. We could return a an error here, but better to be liberal in
+		// chars. We could return an error here, but better to be liberal in
 		// what we accept, so if we get an empty key, skip it.
 		if key == "" {
 			continue
 		}
 
-		i++ // skip colon
+		i++ // skip colon or semicolon
 		v := kv[i:]
 
 		value := trimAroundNewlines(v)
