@@ -95,8 +95,8 @@ func Example_transform() {
 	}
 
 	// Define a function that transforms message.
-	var transform func(w *message.Writer, e *message.Entity) error
-	transform = func(w *message.Writer, e *message.Entity) error {
+	var transform func(w *message.Writer, e *message.Reader) error
+	transform = func(w *message.Writer, e *message.Reader) error {
 		if mr := e.MultipartReader(); mr != nil {
 			// This is a multipart entity, transform each of its parts
 			for {

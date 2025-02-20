@@ -36,19 +36,19 @@ type Part struct {
 type Reader struct {
 	Header Header
 
-	e       *message.Entity
+	e       *message.Reader
 	readers *list.List
 }
 
 // NewReader creates a new mail reader.
-func NewReader(e *message.Entity) *Reader {
+func NewReader(e *message.Reader) *Reader {
 	mr := e.MultipartReader()
 	if mr == nil {
 		// Artificially create a multipart entity
 		// With this header, no error will be returned by message.NewMultipart
 		var h message.Header
 		h.Set("Content-Type", "multipart/mixed")
-		me, _ := message.NewMultipart(h, []*message.Entity{e})
+		me, _ := message.NewMultipartReader(h, []*message.Reader{e})
 		mr = me.MultipartReader()
 	}
 

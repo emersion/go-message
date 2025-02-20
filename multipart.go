@@ -13,9 +13,9 @@ type MultipartReader interface {
 	// NextPart returns the next part in the multipart or an error. When there are
 	// no more parts, the error io.EOF is returned.
 	//
-	// Entity.Body must be read completely before the next call to NextPart,
+	// Reader.Body must be read completely before the next call to NextPart,
 	// otherwise it will be discarded.
-	NextPart() (*Entity, error)
+	NextPart() (*Reader, error)
 }
 
 type multipartReader struct {
@@ -23,12 +23,12 @@ type multipartReader struct {
 }
 
 // NextPart implements MultipartReader.
-func (r *multipartReader) NextPart() (*Entity, error) {
+func (r *multipartReader) NextPart() (*Reader, error) {
 	p, err := r.r.NextPart()
 	if err != nil {
 		return nil, err
 	}
-	return New(Header{p.Header}, p)
+	return NewReader(Header{p.Header}, p)
 }
 
 // Close implements io.Closer.
@@ -38,7 +38,7 @@ func (r *multipartReader) Close() error {
 
 type multipartBody struct {
 	header Header
-	parts  []*Entity
+	parts  []*Reader
 
 	r *io.PipeReader
 	w *Writer
@@ -88,7 +88,7 @@ func (m *multipartBody) Close() error {
 }
 
 // NextPart implements MultipartReader.
-func (m *multipartBody) NextPart() (*Entity, error) {
+func (m *multipartBody) NextPart() (*Reader, error) {
 	if m.i >= len(m.parts) {
 		return nil, io.EOF
 	}
