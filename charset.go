@@ -64,3 +64,29 @@ func decodeHeader(s string) (string, error) {
 func encodeHeader(s string) string {
 	return mime.QEncoding.Encode("utf-8", s)
 }
+
+// DecodeTextAttachments turns on charset decoding to UTF-8 for all multipart
+// `text/*` parts. It is `true` by default for backward compatibility. All
+// `text/*` parts either `inline` or `attachment` Content-Disposition will be
+// decoded to UTF-8. This may cause data corruption for incorrect or invalid
+// emails, for example when defined charset doesn't match actual charset.
+//
+// When set to `false`, the `text/*` parts with Content-Disposition set to
+// `attachment` will NOT be decoded and will be returned "as is".
+//
+// https://github.com/emersion/go-message/issues/182
+var DecodeTextAttachments = true
+
+// needDecodeTextPart returns whether we need to decode text/* part to UTF-8
+//
+// https://github.com/emersion/go-message/issues/182
+func needDecodeTextPart(header Header) bool {
+	if DecodeTextAttachments {
+		return true
+	}
+	disposition, _, err := header.ContentDisposition()
+	if err == nil && disposition == "attachment" {
+		return false
+	}
+	return true
+}
