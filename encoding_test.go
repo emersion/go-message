@@ -1,9 +1,11 @@
 package message
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"io/ioutil"
+	"mime/quotedprintable"
 	"strings"
 	"testing"
 )
@@ -166,4 +168,89 @@ func writeStringBytePerByte(w io.Writer, s string) error {
 		}
 	}
 	return nil
+}
+
+func TestLenientQPReader(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "valid_hex",
+			input:    "=62",
+			expected: "b",
+		},
+		{
+			name:     "valid_soft_break",
+			input:    "foo=\r\nbar",
+			expected: "foobar",
+		},
+		{
+			name:     "malformed_soft_break_spaces",
+			input:    "foo=  \r\nbar", // Spaces after = are stripped
+			expected: "foobar",
+		},
+		{
+			name:     "malformed_soft_break_tabs",
+			input:    "foo=\t\t\r\nbar",
+			expected: "foobar",
+		},
+		{
+			name:  "spaces_before_soft_break",
+			input: "foo  =\r\nbar", // Leading spaces before soft break should be preserved logic?
+			// Wait, my logic preserves spaces if they are before '=' and '=' is start of soft break.
+			// input: "foo  =\r\n"
+			// ' ' -> peek -> ' ' -> peek -> '='. '=' is soft break. Encode spaces.
+			// encoded: "foo=20=20=\r\n"
+			// decoded: "foo  " + "bar"
+			expected: "foo  bar",
+		},
+		{
+			name:     "malformed_literal_space",
+			input:    "equation = 5", // = followed by space but no newline
+			expected: "equation = 5", // = processed as =3D
+		},
+		{
+			name:     "malformed_literal_eof",
+			input:    "end=", // = at EOF
+			expected: "end=",
+		},
+		{
+			name:  "trailing_whitespace_eol",
+			input: "end  \r\n", // Trailing spaces at EOL
+			// My logic: If ' ' peek finds \r or \n -> do NOT encode (let Go strip).
+			// So decoded "end\r\n" (stripped).
+			expected: "end\r\n", // Go QP decoder usually strips this?
+			// quotedprintable.NewReader returns decoded content.
+			// If input "end  \r\n". Decoded is "end\r\n" or "end  \r\n"?
+			// Go spec: "Trailing whitespace is removed from each line."
+			// So "end\r\n".
+		},
+		{
+			name:     "interleaved_valid_and_invalid",
+			input:    "foo=  \r\n=62ar", // malformed soft break, then valid hex
+			expected: "foobar",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := strings.NewReader(tt.input)
+			// Manually construct lenientQPReader as it's private
+			lqp := &lenientQPReader{wrapped: bufio.NewReader(r)}
+			// Wrap with standard QP decoder
+			dec := quotedprintable.NewReader(lqp)
+
+			gotBytes, err := io.ReadAll(dec)
+			if err != nil {
+				t.Fatalf("ReadAll failed: %v", err)
+			}
+			got := string(gotBytes)
+
+			if got != tt.expected {
+				t.Errorf("got %q, expected %q", got, tt.expected)
+			}
+		})
+	}
 }
