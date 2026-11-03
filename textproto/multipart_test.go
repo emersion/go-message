@@ -846,6 +846,27 @@ func roundTripParseTest() parseTest {
 	return t
 }
 
+func TestMultipartEpilogue(t *testing.T) {
+	for _, body := range []string{
+		"--b\r\n\r\nA\r\n--b--\r\nepilogue\r\n",
+		"--b\r\n\r\nA\r\n--b-- epilogue\r\n",
+		"--b\r\n\r\nA\r\n--b--epilogue\r\nmore epilogue\r\n",
+		"--b\r\n\r\nA\r\n--b--epilogue",
+	} {
+		mr := NewMultipartReader(strings.NewReader(body), "b")
+		p, err := mr.NextPart()
+		if err != nil {
+			t.Fatalf("%q: NextPart() = %v", body, err)
+		}
+		if b, err := ioutil.ReadAll(p); err != nil || string(b) != "A" {
+			t.Errorf("%q: part body = %q, %v; want \"A\"", body, b, err)
+		}
+		if _, err := mr.NextPart(); err != io.EOF {
+			t.Errorf("%q: NextPart() = %v; want io.EOF", body, err)
+		}
+	}
+}
+
 func TestNoBoundary(t *testing.T) {
 	mr := NewMultipartReader(strings.NewReader(""), "")
 	_, err := mr.NextPart()
