@@ -301,14 +301,11 @@ func (r *MultipartReader) NextPart() (*Part, error) {
 
 // isFinalBoundary reports whether line is the final boundary line
 // indicating that all parts are over.
-// It matches `^--boundary--[ \t]*(\r\n)?$`
+// It matches `^--boundary--`: RFC 2046 section 5.1.1 does not require the
+// boundary to match the entire line, and whatever follows the close
+// delimiter is part of the epilogue, which is ignored.
 func (mr *MultipartReader) isFinalBoundary(line []byte) bool {
-	if !bytes.HasPrefix(line, mr.dashBoundaryDash) {
-		return false
-	}
-	rest := line[len(mr.dashBoundaryDash):]
-	rest = skipLWSPChar(rest)
-	return len(rest) == 0 || bytes.Equal(rest, mr.nl)
+	return bytes.HasPrefix(line, mr.dashBoundaryDash)
 }
 
 func (mr *MultipartReader) isBoundaryDelimiterLine(line []byte) (ret bool) {
