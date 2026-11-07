@@ -53,10 +53,36 @@ func TestDecode(t *testing.T) {
 	}
 }
 
-func TestDecode_error(t *testing.T) {
-	_, err := encodingReader("idontexist", nil)
-	if err == nil {
-		t.Errorf("Expected an error when creating decoder for invalid encoding")
+func TestDecode_unknownEncodingIsRaw(t *testing.T) {
+	r, err := encodingReader("UTF-8", strings.NewReader("café"))
+	if err != nil {
+		t.Fatalf("Expected no error for unknown transfer encoding, but got: %v", err)
+	}
+	b, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("Expected no error when reading unknown transfer encoding, but got: %v", err)
+	}
+	if s := string(b); s != "café" {
+		t.Errorf("Expected unknown transfer encoding to be treated as raw, got %q", s)
+	}
+}
+
+func TestUnknownTransferEncoding(t *testing.T) {
+	raw := "Content-Type: text/plain; charset=UTF-8\r\n" +
+		"Content-Transfer-Encoding: UTF-8\r\n" +
+		"\r\n" +
+		"café\r\n"
+
+	ent, err := Read(strings.NewReader(raw))
+	if err != nil {
+		t.Fatalf("Read() = %v, want nil", err)
+	}
+	b, err := io.ReadAll(ent.Body)
+	if err != nil {
+		t.Fatalf("ReadAll() = %v", err)
+	}
+	if got, want := string(b), "café\r\n"; got != want {
+		t.Errorf("body = %q, want %q", got, want)
 	}
 }
 

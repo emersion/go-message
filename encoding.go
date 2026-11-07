@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+// UnknownEncodingError is retained for backwards compatibility.
+//
+// Deprecated: unrecognized transfer encodings are treated as unencoded per
+// RFC 2045 section 6.4 and no longer produce this error.
 type UnknownEncodingError struct {
 	e error
 }
@@ -22,6 +26,9 @@ func (u UnknownEncodingError) Error() string {
 
 // IsUnknownEncoding returns a boolean indicating whether the error is known to
 // report that the encoding advertised by the entity is unknown.
+//
+// Deprecated: unrecognized transfer encodings are treated as unencoded per
+// RFC 2045 section 6.4 and no longer produce this error.
 func IsUnknownEncoding(err error) bool {
 	return errors.As(err, new(UnknownEncodingError))
 }
@@ -37,7 +44,9 @@ func encodingReader(enc string, r io.Reader) (io.Reader, error) {
 	case "7bit", "8bit", "binary", "":
 		dec = r
 	default:
-		return nil, fmt.Errorf("unhandled encoding %q", enc)
+		// RFC 2045 section 6.4: an unrecognized Content-Transfer-Encoding
+		// must be treated as an unencoded body rather than rejected.
+		dec = r
 	}
 	return dec, nil
 }

@@ -60,9 +60,9 @@ func NewReader(e *message.Entity) *Reader {
 
 // CreateReader reads a mail header from r and returns a new mail reader.
 //
-// If the message uses an unknown transfer encoding or charset, CreateReader
-// returns an error that verifies message.IsUnknownCharset, but also returns a
-// Reader that can be used.
+// If the message uses an unknown charset, CreateReader returns an error that
+// verifies message.IsUnknownCharset, but also returns a Reader that can be
+// used. Unrecognized transfer encodings are treated as unencoded.
 func CreateReader(r io.Reader) (*Reader, error) {
 	e, err := message.Read(r)
 	if err != nil && !message.IsUnknownCharset(err) {
@@ -78,9 +78,9 @@ func CreateReader(r io.Reader) (*Reader, error) {
 // The returned Part.Body must be read completely before the next call to
 // NextPart, otherwise it will be discarded.
 //
-// If the part uses an unknown transfer encoding or charset, NextPart returns an
-// error that verifies message.IsUnknownCharset, but also returns a Part that
-// can be used.
+// If the part uses an unknown charset, NextPart returns an error that verifies
+// message.IsUnknownCharset, but also returns a Part that can be used.
+// Unrecognized transfer encodings are treated as unencoded.
 func (r *Reader) NextPart() (*Part, error) {
 	for r.readers.Len() > 0 {
 		e := r.readers.Back()

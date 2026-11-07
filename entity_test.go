@@ -2,7 +2,6 @@ package message
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"math"
@@ -307,17 +306,11 @@ func TestNew_unknownTransferEncoding(t *testing.T) {
 	r := strings.NewReader(expected)
 
 	e, err := New(h, r)
-	if err == nil {
-		t.Fatal("New(unknown transfer encoding): expected an error")
-	}
-	if !IsUnknownEncoding(err) {
-		t.Fatal("New(unknown transfer encoding): expected an error that verifies IsUnknownEncoding")
-	}
-	if !errors.As(err, &UnknownEncodingError{}) {
-		t.Fatal("New(unknown transfer encoding): expected an error that verifies errors.As(err, &EncodingError{})")
+	if err != nil {
+		t.Fatalf("New(unknown transfer encoding): expected no error, got %v", err)
 	}
 
-	if b, err := ioutil.ReadAll(e.Body); err != nil {
+	if b, err := io.ReadAll(e.Body); err != nil {
 		t.Error("Expected no error while reading entity body, got", err)
 	} else if s := string(b); s != expected {
 		t.Errorf("Expected %q as entity body but got %q", expected, s)

@@ -26,9 +26,9 @@ type Entity struct {
 // New makes a new message with the provided header and body. The entity's
 // transfer encoding and charset are automatically decoded to UTF-8.
 //
-// If the message uses an unknown transfer encoding or charset, New returns an
-// error that verifies IsUnknownCharset, but also returns an Entity that can
-// be read.
+// If the message uses an unknown charset, New returns an error that verifies
+// IsUnknownCharset, but also returns an Entity that can be read. Unrecognized
+// transfer encodings are treated as unencoded.
 func New(header Header, body io.Reader) (*Entity, error) {
 	var err error
 
@@ -69,10 +69,6 @@ func New(header Header, body io.Reader) (*Entity, error) {
 
 // NewMultipart makes a new multipart message with the provided header and
 // parts. The Content-Type header must begin with "multipart/".
-//
-// If the message uses an unknown transfer encoding, NewMultipart returns an
-// error that verifies IsUnknownCharset, but also returns an Entity that can
-// be read.
 func NewMultipart(header Header, parts []*Entity) (*Entity, error) {
 	r := &multipartBody{
 		header: header,
@@ -131,9 +127,9 @@ func (o *ReadOptions) withDefaults() *ReadOptions {
 // ReadWithOptions see Read, but allows overriding some parameters with
 // ReadOptions.
 //
-// If the message uses an unknown transfer encoding or charset, ReadWithOptions
-// returns an error that verifies IsUnknownCharset or IsUnknownEncoding, but
-// also returns an Entity that can be read.
+// If the message uses an unknown charset, ReadWithOptions returns an error
+// that verifies IsUnknownCharset, but also returns an Entity that can be read.
+// Unrecognized transfer encodings are treated as unencoded.
 func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
 	opts = opts.withDefaults()
 
@@ -154,9 +150,9 @@ func ReadWithOptions(r io.Reader, opts *ReadOptions) (*Entity, error) {
 // automatically decoded to raw UTF-8. Note that this function only reads the
 // message header.
 //
-// If the message uses an unknown transfer encoding or charset, Read returns an
-// error that verifies IsUnknownCharset or IsUnknownEncoding, but also returns
-// an Entity that can be read.
+// If the message uses an unknown charset, Read returns an error that verifies
+// IsUnknownCharset, but also returns an Entity that can be read. Unrecognized
+// transfer encodings are treated as unencoded.
 func Read(r io.Reader) (*Entity, error) {
 	return ReadWithOptions(r, nil)
 }
